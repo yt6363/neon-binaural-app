@@ -10,12 +10,19 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { History, Headphones, Star, StarOff, Play, Pause, Home, SlidersHorizontal, Brain, BookOpenText, Activity, Trash2 } from "lucide-react";
 
+/* ---- DOM typings to avoid `any` ---- */
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+    __NBS_TESTED__?: boolean;
+  }
+}
+
 // ------------------------------------------------------------
 // Neon Binaural Studio — 2025 Revamp (Light mode / Gen Z UX)
-// Full app shell + working tabs + audio engine + real scopes
-// This patch wires Session History + Daily Streak with localStorage.
-// Also fixes Pattern game to match Quant reveal panel and Enter submit.
-// And sets equal heights for both visualizer rectangles.
+// Session History + Daily Streak persisted in localStorage.
+// Pattern tab mirrors Quant reveal UX. Visualizers equal height.
+// ESLint clean for no-explicit-any and no-unused-expressions.
 // ------------------------------------------------------------
 
 const BANDS = {
@@ -65,7 +72,7 @@ export type Session = {
 };
 
 const SESSIONS_KEY = "nbs.sessions.v1";
-const MIN_COUNTED_MINUTES = 1; // counts toward streak if ≥ 1 minute
+const MIN_COUNTED_MINUTES = 1;
 
 function loadSessions(): Session[] {
   if (typeof window === "undefined") return [];
@@ -112,8 +119,8 @@ function computeStreak(sessions: Session[]): number {
   kind: 'arith' | 'breakeven' | 'cagr' | 'ltv' | 'payback' | 'cm';
   prompt: string;
   formula?: string;
-  answer: number;     // numeric expected answer (CAGR uses %)
-  solution: string;   // short solution
+  answer: number;
+  solution: string;
 };
 
 function genQuant(): QuantQ {
@@ -147,7 +154,7 @@ function genQuant(): QuantQ {
       kind,
       prompt: `CAGR from $${A}M to $${B}M over ${n} years? (answer in %)`,
       formula: `CAGR = (End/Start)^(1/n) − 1`,
-      answer: Math.round(cagr * 100 * 100) / 100, // percent, 2dp
+      answer: Math.round(cagr * 100 * 100) / 100,
       solution: `(${B}/${A})^(1/${n}) − 1 = ${(Math.pow(B/A,1/n)).toFixed(4)} − 1 = ${(cagr*100).toFixed(2)}%`
     };
   }
@@ -269,14 +276,13 @@ export default function NeonBinauralStudio() {
   const [panA, setPanA] = useState(-1);
   const [panB, setPanB] = useState(1);
 
-  // Focus tools state — Quant (Math + Consulting merged)
+  // Focus tools state — Quant + Pattern + Vocab
   const [quantQ, setQuantQ] = useState<QuantQ>(() => genQuant());
   const [quantFeedback, setQuantFeedback] = useState<null | 'correct' | 'wrong'>(null);
   const [quantInput, setQuantInput] = useState<string>("");
   const [quantReveal, setQuantReveal] = useState(false);
   const [quantScore, setQuantScore] = useState(0);
 
-  // Pattern game state
   type PatternItem = { seq: number[]; ans: number; solution: string };
   const patternRef = useRef<PatternItem>({ seq: [2, 4, 8, 16], ans: 32, solution: "Each term ×2. Next = last × 2" });
   const [patternHist, setPatternHist] = useState<PatternItem[]>([]);
@@ -387,10 +393,8 @@ export default function NeonBinauralStudio() {
     if (tab !== 'home') return;
     const cL = scopeLRef.current;
     const cR = scopeRRef.current;
-    // Left
     if (analyserLRef.current && cL) drawScopeFromAnalyser(analyserLRef.current, cL, "#111827", BANDS[band].color);
     else drawScopeFake(cL, "#111827", BANDS[band].color);
-    // Right
     if (analyserRRef.current && cR) drawScopeFromAnalyser(analyserRRef.current, cR, "#111827", BANDS[band].color);
     else drawScopeFake(cR, "#111827", BANDS[band].color);
   }, true);
@@ -403,8 +407,8 @@ export default function NeonBinauralStudio() {
 
   function start() {
     if (playing) return;
-    const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
-    const ctx: AudioContext = new Ctx({ sampleRate: 48000 });
+    const CtxCtor = (window.AudioContext ?? window.webkitAudioContext) as typeof AudioContext;
+    const ctx: AudioContext = new CtxCtor({ sampleRate: 48000 });
     ctxRef.current = ctx;
     masterRef.current = new GainNode(ctx, { gain: 0.9 });
 
@@ -507,9 +511,7 @@ export default function NeonBinauralStudio() {
       handlePatternNext();
     }
   }
-  function handlePatternNext(){
-    newPattern();
-  }
+  function handlePatternNext(){ newPattern(); }
   function handlePatternPrev(){
     setPatternHist(h=>{
       if (!h.length) return h;
@@ -521,9 +523,7 @@ export default function NeonBinauralStudio() {
       return h.slice(0,-1);
     });
   }
-  function handlePatternReveal(){
-    setPatternReveal(true);
-  }
+  function handlePatternReveal(){ setPatternReveal(true); }
 
   // ------------ Derived for UI ------------
   const accent = BANDS[band].color;
@@ -641,17 +641,22 @@ export default function NeonBinauralStudio() {
     ctx2.fillStyle = "#fff"; ctx2.fillRect(0, 0, w, h);
     const buf = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteTimeDomainData(buf);
+
     ctx2.beginPath();
     for (let i = 0; i < buf.length; i++) {
-      const x = (i / (buf.length - 1)) * w; const y = (buf[i] / 255) * h; i ? ctx2.lineTo(x, y) : ctx2.moveTo(x, y);
+      const x = (i / (buf.length - 1)) * w; const y = (buf[i] / 255) * h;
+      if (i) { ctx2.lineTo(x, y); } else { ctx2.moveTo(x, y); }
     }
     ctx2.lineWidth = 3; ctx2.strokeStyle = glow; ctx2.shadowBlur = 10; ctx2.shadowColor = glow; ctx2.globalAlpha = .85; ctx2.stroke();
+
     ctx2.beginPath();
     for (let i = 0; i < buf.length; i++) {
-      const x = (i / (buf.length - 1)) * w; const y = (buf[i] / 255) * h; i ? ctx2.lineTo(x, y) : ctx2.moveTo(x, y);
+      const x = (i / (buf.length - 1)) * w; const y = (buf[i] / 255) * h;
+      if (i) { ctx2.lineTo(x, y); } else { ctx2.moveTo(x, y); }
     }
     ctx2.lineWidth = 1.2; ctx2.strokeStyle = core; ctx2.shadowBlur = 0; ctx2.globalAlpha = 1; ctx2.stroke();
   }
+
   function drawScopeFake(canvas: HTMLCanvasElement | null, core: string, glow: string) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d"); if (!ctx) return;
@@ -659,14 +664,18 @@ export default function NeonBinauralStudio() {
     const h = (canvas.height = Math.max(1, canvas.clientHeight * (window.devicePixelRatio || 1)));
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+
     ctx.beginPath();
     for (let i = 0; i < w; i++) {
-      const t = i / w; const y = h / 2 + Math.sin(t * Math.PI * 4) * (h * 0.18); i ? ctx.lineTo(i, y) : ctx.moveTo(i, y);
+      const t = i / w; const y = h / 2 + Math.sin(t * Math.PI * 4) * (h * 0.18);
+      if (i) { ctx.lineTo(i, y); } else { ctx.moveTo(i, y); }
     }
     ctx.lineWidth = 3; ctx.strokeStyle = glow; ctx.shadowBlur = 10; ctx.shadowColor = glow; ctx.globalAlpha = .85; ctx.stroke();
+
     ctx.beginPath();
     for (let i = 0; i < w; i++) {
-      const t = i / w; const y = h / 2 + Math.sin(t * Math.PI * 4) * (h * 0.18); i ? ctx.lineTo(i, y) : ctx.moveTo(i, y);
+      const t = i / w; const y = h / 2 + Math.sin(t * Math.PI * 4) * (h * 0.18);
+      if (i) { ctx.lineTo(i, y); } else { ctx.moveTo(i, y); }
     }
     ctx.lineWidth = 1.2; ctx.strokeStyle = core; ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.stroke();
   }
@@ -825,7 +834,7 @@ function FocusView(props:{
             <TabsTrigger value="pattern">Pattern</TabsTrigger>
           </TabsList>
 
-          {/* Quant: Math + Consulting */}
+          {/* Quant */}
           <TabsContent value="quant" className="mt-4 space-y-3">
             <div className="text-base font-medium">{props.quantQ.prompt}</div>
             {props.quantReveal && (
@@ -978,8 +987,8 @@ function SelectWave({ value, setValue }: { value: OscillatorType; setValue: (w: 
 // ------------------------
 // Minimal runtime tests (extended)
 // ------------------------
-if (typeof window !== "undefined" && !(window as any).__NBS_TESTED__) {
-  (window as any).__NBS_TESTED__ = true;
+if (typeof window !== "undefined" && !window.__NBS_TESTED__) {
+  window.__NBS_TESTED__ = true;
   console.assert(clamp(5, 0, 10) === 5, "clamp: within bounds");
   console.assert(clamp(-1, 0, 1) === 0, "clamp: low bound");
   console.assert(clamp(2, 0, 1) === 1, "clamp: high bound");
