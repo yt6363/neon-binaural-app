@@ -19,12 +19,10 @@ declare global {
 }
 
 // ------------------------------------------------------------
-// Neon Binaural Studio — 2025 Revamp
-// - Session History + Daily Streak persisted in localStorage
-// - Pattern tab mirrors Quant reveal UX
-// - Visualizers equal height (mobile + desktop)
-// - Mobile-friendly: tightened paddings, stacked controls, safe-area bottom
-// - ESLint clean for no-explicit-any and no-unused-expressions
+// Neon Binaural Studio — 2025 Revamp (Light mode / Gen Z UX)
+// Session History + Daily Streak persisted in localStorage.
+// Pattern tab mirrors Quant reveal UX. Visualizers equal height.
+// ESLint clean for no-explicit-any and no-unused-expressions.
 // ------------------------------------------------------------
 
 const BANDS = {
@@ -533,11 +531,11 @@ export default function NeonBinauralStudio() {
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
-      <div className="max-w-5xl mx-auto px-4 pt-4 pb-28 space-y-8 md:px-16 md:pt-8 md:pb-28 md:space-y-16">
+      <div className="max-w-5xl mx-auto p-16 pt-8 pb-28 space-y-16">
         {/* Top bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="text-xl md:text-2xl font-semibold tracking-tight">Neon Binaural</div>
+            <div className="text-2xl font-semibold tracking-tight">Neon Binaural</div>
             {playing && <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">LIVE</Badge>}
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm">
@@ -623,7 +621,7 @@ export default function NeonBinauralStudio() {
       </div>
 
       {/* Bottom nav (mobile) */}
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-black/10 px-2 pt-2 safe-bottom grid grid-cols-5 md:hidden">
+      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-black/10 p-2 grid grid-cols-5 md:hidden">
         <NavItem icon={<Home size={18}/>} label="Home" active={tab==='home'} onClick={()=>setTab('home')} />
         <NavItem icon={<Brain size={18}/>} label="Sound" active={tab==='soundscapes'} onClick={()=>setTab('soundscapes')} />
         <NavItem icon={<SlidersHorizontal size={18}/>} label="Studio" active={tab==='studio'} onClick={()=>setTab('studio')} />
@@ -697,13 +695,13 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
         <CardHeader className="pb-0">
           <CardTitle className="text-sm text-neutral-600">Now Playing</CardTitle>
         </CardHeader>
-        <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-center">
+        <CardContent className="pt-4 grid md:grid-cols-3 gap-8 items-center">
           {/* Visualizer (contained) */}
           <div className="md:col-span-2 grid gap-3">
-            <div className="h-24 md:h-32 rounded-xl border border-black/10 bg-white overflow-hidden">
+            <div className="h-32 rounded-xl border border-black/10 bg-white overflow-hidden">
               <canvas ref={scopeLRef} className="h-full w-full" />
             </div>
-            <div className="h-24 md:h-32 rounded-xl border border-black/10 bg-white overflow-hidden">
+            <div className="h-32 rounded-xl border border-black/10 bg-white overflow-hidden">
               <canvas ref={scopeRRef} className="h-full w-full" />
             </div>
           </div>
@@ -830,7 +828,7 @@ function FocusView(props:{
       <CardHeader className="pb-2"><CardTitle className="text-sm text-neutral-600">Focus</CardTitle></CardHeader>
       <CardContent>
         <Tabs defaultValue="quant">
-          <TabsList className="w-full flex flex-wrap gap-2">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="quant">Quant</TabsTrigger>
             <TabsTrigger value="vocab">Vocab</TabsTrigger>
             <TabsTrigger value="pattern">Pattern</TabsTrigger>
@@ -845,8 +843,8 @@ function FocusView(props:{
                 <div><span className="font-semibold">Solution:</span> {props.quantQ.solution}</div>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <Input className="w-full sm:w-40" type="text" inputMode="decimal" value={props.quantInput} onChange={e=>props.setQuantInput(e.target.value)} placeholder="answer" onKeyDown={e=>{ if(e.key==='Enter') props.onQuantSubmit(); }} />
+            <div className="flex items-center gap-2">
+              <Input className="w-40" type="text" inputMode="decimal" value={props.quantInput} onChange={e=>props.setQuantInput(e.target.value)} placeholder="answer" onKeyDown={e=>{ if(e.key==='Enter') props.onQuantSubmit(); }} />
               <Button onClick={props.onQuantSubmit}>Submit</Button>
               <Button variant="secondary" onClick={props.onQuantPrev}><History className="h-4 w-4 mr-1"/>Prev</Button>
               <Button variant="secondary" onClick={props.onQuantReveal}>Reveal</Button>
@@ -874,9 +872,9 @@ function FocusView(props:{
                 <div><span className="font-semibold">Solution:</span> {props.patternRef.current?.solution}. Answer = <span className="font-semibold">{props.patternRef.current?.ans}</span></div>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="flex items-center gap-2">
               <Input
-                className="w-full sm:w-32"
+                className="w-32"
                 type="text"
                 inputMode="numeric"
                 value={props.patternInput}
@@ -941,7 +939,7 @@ function HistoryView({ sessions, onClear }: { sessions: Session[]; onClear: () =
 function NavItem({icon,label,active,onClick}:{icon:React.ReactNode;label:string;active:boolean;onClick:()=>void;}){
   return (
     <button onClick={onClick} className={`flex flex-col items-center justify-center py-2 rounded-xl ${active? 'text-neutral-900' : 'text-neutral-500'}`}>
-      <div className={`p-3 rounded-full ${active? 'bg-neutral-200' : 'bg-transparent'}`}>{icon}</div>
+      <div className={`p-2 rounded-full ${active? 'bg-neutral-200' : 'bg-transparent'}`}>{icon}</div>
       <div className="text-[11px] mt-1">{label}</div>
     </button>
   );
@@ -951,9 +949,9 @@ function QuickField({label,value,min,max,step,onChange}:{label:string;value:numb
   return (
     <div className="space-y-2">
       <Label className="text-xs text-neutral-500">{label}</Label>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-        <Slider className="sm:flex-1" value={[value]} min={min} max={max} step={step} onValueChange={([v])=>onChange(Number(v))} />
-        <Input className="w-full sm:w-24" type="number" value={value} min={min} max={max} step={step} onChange={e=>onChange(Number(e.target.value||0))} />
+      <div className="flex items-center gap-3">
+        <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v])=>onChange(Number(v))} />
+        <Input className="w-24" type="number" value={value} min={min} max={max} step={step} onChange={e=>onChange(Number(e.target.value||0))} />
       </div>
     </div>
   );
@@ -963,9 +961,9 @@ function Field({ label, value, setValue, min, max, step, isFloat }: { label: str
   return (
     <div className="space-y-2">
       <Label className="text-xs text-neutral-500">{label}</Label>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-        <Slider className="sm:flex-1" value={[value]} min={min} max={max} step={step} onValueChange={([v]) => setValue(isFloat ? Number(v) : Math.round(v))} />
-        <Input className="w-full sm:w-24" type="number" value={value} min={min} max={max} step={step}
+      <div className="flex items-center gap-3">
+        <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => setValue(isFloat ? Number(v) : Math.round(v))} />
+        <Input className="w-24" type="number" value={value} min={min} max={max} step={step}
           onChange={e => setValue(isFloat ? Number(e.target.value || 0) : Number.parseInt(e.target.value || "0"))} />
       </div>
     </div>
