@@ -19,10 +19,7 @@ declare global {
 }
 
 // ------------------------------------------------------------
-// Neon Binaural Studio — 2025 Revamp (Light mode / Gen Z UX)
-// Session History + Daily Streak persisted in localStorage.
-// Pattern tab mirrors Quant reveal UX. Visualizers equal height.
-// ESLint clean for no-explicit-any and no-unused-expressions.
+// Neon Binaural Studio — 2025 Revamp
 // ------------------------------------------------------------
 
 const BANDS = {
@@ -35,7 +32,6 @@ const BANDS = {
 } as const;
 
 type BandKey = keyof typeof BANDS;
-
 type VocabPair = [word: string, def: string];
 
 // beefed up bank
@@ -76,19 +72,25 @@ function parseNum(s: string) {
   return Number(t);
 }
 function choice<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
-function notInRecent<T>(val: T, recent: T[]): boolean { return !recent.includes(val as any); }
+
+// no-`any` helper
+function notInRecent<T>(val: T, recent: readonly T[], eq?: (a: T, b: T) => boolean): boolean {
+  return !(eq ? recent.some(r => eq(r, val)) : recent.includes(val));
+}
 
 // --- Session history / streak types & helpers ---
 export type Session = {
   startedAt: number;          // epoch ms
   endedAt: number;            // epoch ms
-  durationMin: number;        // rounded minutes
+  durationMin: number;        // whole minutes, floored
   plannedMin: number;         // minutes slider at start
   band: BandKey;              // preset used
 };
 
 const SESSIONS_KEY = "nbs.sessions.v1";
-const MIN_COUNTED_MINUTES = 1;
+
+// >>> Tick rule: one session counts only if >= 14 minutes
+const SESSION_MINUTES = 14;
 
 function loadSessions(): Session[] {
   if (typeof window === "undefined") return [];
@@ -116,7 +118,7 @@ function computeStreak(sessions: Session[]): number {
   if (!sessions.length) return 0;
   const byDay = new Set<string>();
   for (const s of sessions) {
-    if (s.durationMin >= MIN_COUNTED_MINUTES) {
+    if (s.durationMin >= SESSION_MINUTES) {
       const d = new Date(s.endedAt); d.setHours(0,0,0,0);
       byDay.add(d.toISOString());
     }
@@ -131,7 +133,7 @@ function computeStreak(sessions: Session[]): number {
 }
 
 // Quant (Math + Consulting) types
- type QuantQ = {
+type QuantQ = {
   kind: 'arith' | 'breakeven' | 'cagr' | 'ltv' | 'payback' | 'cm';
   prompt: string;
   formula?: string;
@@ -339,7 +341,6 @@ export default function NeonBinauralStudio() {
   // Pattern generation function with no immediate repeat type
   const newPattern = useCallback(() => {
     setPatternHist(h => (patternRef.current ? [...h, patternRef.current] : h).slice(-20));
-    // choose a type different from last
     const types: PatternItem['type'][] = ['x2','arith','fib'];
     const filtered = types.filter(t => t !== lastPatternTypeRef.current);
     const type = choice(filtered.length ? filtered : types);
@@ -511,7 +512,10 @@ export default function NeonBinauralStudio() {
     if (sessionStartRef.current) {
       const { start: startedAt, planned, band: bandAtStart } = sessionStartRef.current;
       const endedAt = Date.now();
-      const durationMin = Math.max(0, Math.round((endedAt - startedAt) / 60000));
+
+      // record WHOLE minutes (floor), not rounded
+      const durationMin = Math.max(0, Math.floor((endedAt - startedAt) / 60000));
+
       const rec: Session = { startedAt, endedAt, durationMin, plannedMin: planned, band: bandAtStart };
       setSessions(prev => [rec, ...prev].slice(0, 200));
       sessionStartRef.current = null;
@@ -581,7 +585,12 @@ export default function NeonBinauralStudio() {
 
   // ------------ Derived for UI ------------
   const accent = BANDS[band].color;
-  const todayCount = sessions.filter(s => isSameDay(new Date(s.endedAt), new Date())).length;
+
+  // Daily Dose counts only sessions >= 14 minutes, today
+  const todayCount = sessions.filter(s =>
+    isSameDay(new Date(s.endedAt), new Date()) &&
+    s.durationMin >= SESSION_MINUTES
+  ).length;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -625,7 +634,6 @@ export default function NeonBinauralStudio() {
         {tab === 'soundscapes' && (
           <SoundscapesView
             band={band}
-            setBand={setBand}
             favorites={favorites}
             setFavorites={setFavorites}
             onPick={pickBandAndPlay}
@@ -791,8 +799,8 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
   );
 }
 
-function SoundscapesView({ band, setBand, favorites, setFavorites, onPick }:{
-  band:BandKey; setBand:(b:BandKey)=>void; favorites:BandKey[]; setFavorites:(favs:BandKey[])=>void; onPick:(k:BandKey)=>void;
+function SoundscapesView({ band, favorites, setFavorites, onPick }:{
+  band:BandKey; favorites:BandKey[]; setFavorites:(favs:BandKey[])=>void; onPick:(k:BandKey)=>void;
 }){
   function toggleFav(k:BandKey){ setFavorites(favorites.includes(k)? favorites.filter((x: BandKey)=>x!==k): [...favorites,k]); }
   return (
