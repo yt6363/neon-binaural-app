@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { History, Headphones, Star, StarOff, Play, Pause, Home, SlidersHorizontal, Brain, BookOpenText, Activity, Trash2 } from "lucide-react";
 
-/* ---- DOM typings to avoid `any` ---- */
+/* ---- DOM typings to avoid any ---- */
 declare global {
   interface Window {
     webkitAudioContext?: typeof AudioContext;
@@ -37,15 +37,29 @@ const BANDS = {
 type BandKey = keyof typeof BANDS;
 
 type VocabPair = [word: string, def: string];
+
+// beefed up bank
 const DEFAULT_WORDS: VocabPair[] = [
   ["concise", "brief and clear"],
   ["cogent", "logical and convincing"],
   ["prudent", "acting with care and thought"],
   ["lucid", "easy to understand"],
-  ["salient", "most noticeable"],
-  ["tenable", "defensible"],
+  ["salient", "most noticeable or important"],
+  ["tenable", "defensible against attack or objection"],
   ["succinct", "expressed with few words"],
-  ["astute", "able to assess and exploit"],
+  ["astute", "sharp in judgment"],
+  ["parsimonious", "unwilling to spend resources"],
+  ["ambivalent", "having mixed feelings"],
+  ["candor", "open and honest expression"],
+  ["eschew", "deliberately avoid"],
+  ["abet", "encourage or assist"],
+  ["fervent", "intensely passionate"],
+  ["aplomb", "self confidence"],
+  ["rancor", "bitter resentment"],
+  ["scrutiny", "critical observation"],
+  ["aplastic", "lacking development or growth"],
+  ["ameliorate", "make something better"],
+  ["cursory", "hasty and not thorough"],
 ];
 
 function clamp(n: number, lo: number, hi: number) { return Math.min(Math.max(n, lo), hi); }
@@ -61,6 +75,8 @@ function parseNum(s: string) {
   if (t === "") return NaN;
   return Number(t);
 }
+function choice<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+function notInRecent<T>(val: T, recent: T[]): boolean { return !recent.includes(val as any); }
 
 // --- Session history / streak types & helpers ---
 export type Session = {
@@ -123,6 +139,7 @@ function computeStreak(sessions: Session[]): number {
   solution: string;
 };
 
+// generate one random question
 function genQuant(): QuantQ {
   const kinds: QuantQ['kind'][] = ['arith','breakeven','cagr','ltv','payback','cm'];
   const kind = kinds[Math.floor(Math.random()*kinds.length)];
@@ -191,12 +208,27 @@ function genQuant(): QuantQ {
   };
 }
 
+// avoid repeats across last N prompts
+function genQuantUnique(recentPrompts: string[], maxTries = 20): QuantQ {
+  for (let i = 0; i < maxTries; i++) {
+    const q = genQuant();
+    if (notInRecent(q.prompt, recentPrompts)) return q;
+  }
+  return genQuant();
+}
+
 // Pure helper for testability
 export function nextWordPick(current: VocabPair, list: VocabPair[]): VocabPair {
   const idx = list.findIndex(([w]) => w === current[0]);
   if (idx === -1) return list[0] ?? current;
   const next = (idx + 1) % Math.max(1, list.length);
   return list[next] ?? current;
+}
+export function nextWordRandom(prev: VocabPair, list: VocabPair[], recent: string[]): VocabPair {
+  const candidates = list.filter(([w]) => w !== prev[0] && !recent.includes(w));
+  if (candidates.length) return choice(candidates);
+  const others = list.filter(([w]) => w !== prev[0]);
+  return others.length ? choice(others) : prev;
 }
 
 function useRaf(fn: () => void, active = true) {
@@ -233,18 +265,18 @@ function HeroControl({ playing, ring, deadline, onStart, onStop, accent, streak 
     <div className="grid place-items-center gap-2">
       <button
         onClick={playing ? onStop : onStart}
-        className="relative w-24 h-24 rounded-full grid place-items-center select-none bg-white shadow-lg border border-black/5"
+        className="relative w-24 h-24 rounded-full grid place-items-center select-none bg-card shadow-lg border"
         aria-label={playing ? "Pause" : "Play"}
       >
         <ProgressRing value={ring} size={96} color={playing ? accent : "#111827"} bg="rgba(0,0,0,.08)" />
         <div className="absolute inset-0 grid place-items-center">
           <div className="flex flex-col items-center gap-1">
             <div className="text-2xl" style={{ color: playing ? accent : "#111827" }}>{playing ? <Pause /> : <Play />}</div>
-            <div className="text-[11px] font-mono text-neutral-600">{mmss}</div>
+            <div className="text-[11px] font-mono text-muted-foreground">{mmss}</div>
           </div>
         </div>
       </button>
-      <div className="text-[11px] text-neutral-600">Streak: <span className="font-semibold text-neutral-800">{streak} day{streak===1?"":"s"}</span></div>
+      <div className="text-[11px] text-muted-foreground">Streak: <span className="font-semibold text-foreground">{streak} day{streak===1?"":"s"}</span></div>
     </div>
   );
 }
@@ -282,9 +314,11 @@ export default function NeonBinauralStudio() {
   const [quantInput, setQuantInput] = useState<string>("");
   const [quantReveal, setQuantReveal] = useState(false);
   const [quantScore, setQuantScore] = useState(0);
+  const [quantRecent, setQuantRecent] = useState<string[]>([]); // last few prompts to avoid repeats
 
-  type PatternItem = { seq: number[]; ans: number; solution: string };
-  const patternRef = useRef<PatternItem>({ seq: [2, 4, 8, 16], ans: 32, solution: "Each term ×2. Next = last × 2" });
+  type PatternItem = { seq: number[]; ans: number; solution: string; type: 'x2'|'arith'|'fib' };
+  const patternRef = useRef<PatternItem>({ seq: [2, 4, 8, 16], ans: 32, solution: "Each term ×2. Next = last × 2", type: 'x2' });
+  const lastPatternTypeRef = useRef<PatternItem['type']>('x2');
   const [patternHist, setPatternHist] = useState<PatternItem[]>([]);
   const [patternInput, setPatternInput] = useState("");
   const [patternScore, setPatternScore] = useState(0);
@@ -292,15 +326,27 @@ export default function NeonBinauralStudio() {
   const [patternReveal, setPatternReveal] = useState(false);
 
   const [vocab, setVocab] = useState<VocabPair>(DEFAULT_WORDS[0]);
-  function nextWord() { setVocab(cur => nextWordPick(cur, DEFAULT_WORDS)); }
+  const [vocabRecent, setVocabRecent] = useState<string[]>([]);
 
-  // Pattern generation function with solution text
+  function nextWord() {
+    setVocab(cur => {
+      const nxt = nextWordRandom(cur, DEFAULT_WORDS, vocabRecent);
+      setVocabRecent(r => [nxt[0], ...r].slice(0, 7)); // remember last 7 words
+      return nxt;
+    });
+  }
+
+  // Pattern generation function with no immediate repeat type
   const newPattern = useCallback(() => {
     setPatternHist(h => (patternRef.current ? [...h, patternRef.current] : h).slice(-20));
-    const type = ['x2','arith','fib'][rint(0, 2)];
+    // choose a type different from last
+    const types: PatternItem['type'][] = ['x2','arith','fib'];
+    const filtered = types.filter(t => t !== lastPatternTypeRef.current);
+    const type = choice(filtered.length ? filtered : types);
+
     let seq: number[] = [], ans = 0, solution = "";
     if (type==='x2'){
-      seq = series(2, 5, function(n){ return n * 2; });
+      seq = series(rint(1,4)*2, 5, function(n){ return n * 2; });
       ans = seq[seq.length-1]*2;
       solution = "Each term ×2. Next = last × 2";
     }
@@ -317,16 +363,15 @@ export default function NeonBinauralStudio() {
       ans = seq[3]+seq[4];
       solution = "Fibonacci rule aₙ = aₙ₋₁ + aₙ₋₂. Next = sum of last two terms";
     }
-    patternRef.current = { seq, ans, solution };
+    patternRef.current = { seq, ans, solution, type };
+    lastPatternTypeRef.current = type;
     setPatternInput("");
     setPatternFeedback(null);
     setPatternReveal(false);
   }, []);
 
   // Initialize pattern generation on mount
-  useEffect(() => {
-    newPattern();
-  }, [newPattern]);
+  useEffect(() => { newPattern(); }, [newPattern]);
 
   // Audio engine nodes
   const ctxRef = useRef<AudioContext | null>(null);
@@ -488,10 +533,12 @@ export default function NeonBinauralStudio() {
     }
   }
   function handleQuantNext(){
-    setQuantQ(genQuant());
+    const next = genQuantUnique(quantRecent, 24);
+    setQuantQ(next);
     setQuantInput("");
     setQuantReveal(false);
     setQuantFeedback(null);
+    setQuantRecent(r => [next.prompt, ...r].slice(0, 12));
   }
   function handleQuantPrev(){
     setQuantInput("");
@@ -517,6 +564,7 @@ export default function NeonBinauralStudio() {
       if (!h.length) return h;
       const prev = h[h.length-1];
       patternRef.current = prev;
+      lastPatternTypeRef.current = prev.type;
       setPatternInput("");
       setPatternFeedback(null);
       setPatternReveal(false);
@@ -525,18 +573,24 @@ export default function NeonBinauralStudio() {
   }
   function handlePatternReveal(){ setPatternReveal(true); }
 
+  // soundscapes helper: pick and auto play
+  function pickBandAndPlay(k: BandKey) {
+    setBand(k);
+    if (!playing) start();
+  }
+
   // ------------ Derived for UI ------------
   const accent = BANDS[band].color;
   const todayCount = sessions.filter(s => isSameDay(new Date(s.endedAt), new Date())).length;
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-5xl mx-auto p-16 pt-8 pb-28 space-y-16">
         {/* Top bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="text-2xl font-semibold tracking-tight">Neon Binaural</div>
-            {playing && <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">LIVE</Badge>}
+            {playing && <Badge variant="outline" className="text-emerald-700 border-emerald-300">LIVE</Badge>}
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm">
             <NavItem icon={<Home size={16}/>} label="Home" active={tab==='home'} onClick={()=>setTab('home')} />
@@ -569,7 +623,13 @@ export default function NeonBinauralStudio() {
         )}
 
         {tab === 'soundscapes' && (
-          <SoundscapesView band={band} setBand={setBand} favorites={favorites} setFavorites={setFavorites} />
+          <SoundscapesView
+            band={band}
+            setBand={setBand}
+            favorites={favorites}
+            setFavorites={setFavorites}
+            onPick={pickBandAndPlay}
+          />
         )}
 
         {tab === 'studio' && (
@@ -621,7 +681,7 @@ export default function NeonBinauralStudio() {
       </div>
 
       {/* Bottom nav (mobile) */}
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-black/10 p-2 grid grid-cols-5 md:hidden">
+      <div className="fixed bottom-0 inset-x-0 bg-card border-t p-2 grid grid-cols-5 md:hidden">
         <NavItem icon={<Home size={18}/>} label="Home" active={tab==='home'} onClick={()=>setTab('home')} />
         <NavItem icon={<Brain size={18}/>} label="Sound" active={tab==='soundscapes'} onClick={()=>setTab('soundscapes')} />
         <NavItem icon={<SlidersHorizontal size={18}/>} label="Studio" active={tab==='studio'} onClick={()=>setTab('studio')} />
@@ -691,17 +751,17 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
   return (
     <div className="grid gap-12">
       {/* Now Playing */}
-      <Card className="bg-white border border-black/10">
+      <Card>
         <CardHeader className="pb-0">
-          <CardTitle className="text-sm text-neutral-600">Now Playing</CardTitle>
+          <CardTitle className="text-sm text-muted-foreground">Now Playing</CardTitle>
         </CardHeader>
         <CardContent className="pt-4 grid md:grid-cols-3 gap-8 items-center">
-          {/* Visualizer (contained) */}
+          {/* Visualizer (taller to align with controls) */}
           <div className="md:col-span-2 grid gap-3">
-            <div className="h-32 rounded-xl border border-black/10 bg-white overflow-hidden">
+            <div className="h-44 rounded-xl border bg-card overflow-hidden">
               <canvas ref={scopeLRef} className="h-full w-full" />
             </div>
-            <div className="h-32 rounded-xl border border-black/10 bg-white overflow-hidden">
+            <div className="h-44 rounded-xl border bg-card overflow-hidden">
               <canvas ref={scopeRRef} className="h-full w-full" />
             </div>
           </div>
@@ -719,35 +779,37 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
       </Card>
 
       {/* Daily Dose */}
-      <Card className="bg-white border border-black/10">
-        <CardHeader className="pb-2"><CardTitle className="text-sm text-neutral-600">Daily Dose</CardTitle></CardHeader>
-        <CardContent className="flex items-center gap-3 text-sm text-neutral-600">
-          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=1? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border-black/10'}`}>{todayCount>=1? '☑' : '☐'} Session 1</span>
-          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=2? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border-black/10 opacity-60'}`}>{todayCount>=2? '☑' : '☐'} Session 2</span>
-          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=3? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border-black/10 opacity-60'}`}>{todayCount>=3? '☑' : '☐'} Session 3</span>
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Daily Dose</CardTitle></CardHeader>
+        <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=1? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border'}`}>{todayCount>=1? '☑' : '☐'} Session 1</span>
+          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=2? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border opacity-60'}`}>{todayCount>=2? '☑' : '☐'} Session 2</span>
+          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=3? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border opacity-60'}`}>{todayCount>=3? '☑' : '☐'} Session 3</span>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-function SoundscapesView({ band, setBand, favorites, setFavorites }:{ band:BandKey; setBand:(b:BandKey)=>void; favorites:BandKey[]; setFavorites:(favs:BandKey[])=>void; }){
+function SoundscapesView({ band, setBand, favorites, setFavorites, onPick }:{
+  band:BandKey; setBand:(b:BandKey)=>void; favorites:BandKey[]; setFavorites:(favs:BandKey[])=>void; onPick:(k:BandKey)=>void;
+}){
   function toggleFav(k:BandKey){ setFavorites(favorites.includes(k)? favorites.filter((x: BandKey)=>x!==k): [...favorites,k]); }
   return (
     <div className="grid gap-10">
       {/* Favorites */}
       <div className="grid gap-3">
-        <div className="text-sm text-neutral-600">My Favorites</div>
+        <div className="text-sm text-muted-foreground">My Favorites</div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {favorites.map(k=> <MoodCard key={k} k={k} active={band===k} onPick={()=>setBand(k)} onFav={()=>toggleFav(k)} />)}
+          {favorites.map(k=> <MoodCard key={k} k={k} active={band===k} onPick={()=>onPick(k)} onFav={()=>toggleFav(k)} />)}
         </div>
       </div>
 
       {/* All */}
       <div className="grid gap-3">
-        <div className="text-sm text-neutral-600">All Moodscapes</div>
+        <div className="text-sm text-muted-foreground">All Moodscapes</div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {(Object.keys(BANDS) as BandKey[]).map(k=> <MoodCard key={k} k={k} active={band===k} onPick={()=>setBand(k)} onFav={()=>toggleFav(k)} />)}
+          {(Object.keys(BANDS) as BandKey[]).map(k=> <MoodCard key={k} k={k} active={band===k} onPick={()=>onPick(k)} onFav={()=>toggleFav(k)} />)}
         </div>
       </div>
     </div>
@@ -757,15 +819,15 @@ function SoundscapesView({ band, setBand, favorites, setFavorites }:{ band:BandK
 function MoodCard({ k, active, onPick, onFav }:{ k:BandKey; active:boolean; onPick:()=>void; onFav:()=>void; }){
   const v = BANDS[k];
   return (
-    <button onClick={onPick} className={`relative rounded-2xl border px-3 py-4 text-left bg-white ${active? 'border-black/40' : 'border-black/10'} group`}>
+    <button onClick={onPick} className={`relative rounded-2xl border px-3 py-4 text-left bg-card ${active? 'border-foreground/40' : 'border'} group`}>
       <div className="flex items-center justify-between">
         <div className="text-2xl" aria-hidden>{v.icon}</div>
         <div onClick={(e)=>{e.stopPropagation(); onFav();}} className="opacity-70 hover:opacity-100">
-          {active ? <Star fill="#111" color="#111" size={18}/> : <StarOff size={18}/>}
+          {active ? <Star fill="currentColor" size={18}/> : <StarOff size={18}/>}
         </div>
       </div>
-      <div className="mt-3 font-medium" style={{color:'#111827'}}>{v.name}</div>
-      <div className="text-xs text-neutral-600">{v.range[0]}–{v.range[1]} Hz · {v.hint}</div>
+      <div className="mt-3 font-medium text-card-foreground">{v.name}</div>
+      <div className="text-xs text-muted-foreground">{v.range[0]}–{v.range[1]} Hz · {v.hint}</div>
       <div className="absolute inset-x-3 bottom-3 h-1 rounded-full" style={{background:v.color, opacity:.2}}/>
     </button>
   );
@@ -788,8 +850,8 @@ function StudioView(props:{
 
 function VoiceCard({title,freq,setFreq,gain,setGain,pan,setPan,wave,setWave}:{title:string;freq:number;setFreq:(n:number)=>void;gain:number;setGain:(n:number)=>void;pan:number;setPan:(n:number)=>void;wave:OscillatorType;setWave:(w:OscillatorType)=>void;}){
   return (
-    <Card className="bg-white border border-black/10">
-      <CardHeader className="pb-2"><CardTitle className="text-sm text-neutral-600 flex items-center gap-2"><Headphones className="h-4 w-4" />{title}</CardTitle></CardHeader>
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Headphones className="h-4 w-4" />{title}</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <Field label="Frequency" value={freq} setValue={setFreq} min={20} max={2000} step={1} />
         <Field label="Volume" value={gain} setValue={setGain} min={0} max={1} step={0.001} isFloat />
@@ -801,7 +863,7 @@ function VoiceCard({title,freq,setFreq,gain,setGain,pan,setPan,wave,setWave}:{ti
 }
 
 function FocusView(props:{
-  // Quant (Math + Consulting)
+  // Quant
   quantQ: ReturnType<typeof genQuant>;
   quantInput: string;
   setQuantInput: (s:string)=>void;
@@ -815,17 +877,17 @@ function FocusView(props:{
   // Vocab
   nextWord: ()=>void; vocab: VocabPair;
   // Pattern
-  patternRef: React.RefObject<{seq:number[];ans:number;solution:string}>;
+  patternRef: React.RefObject<{seq:number[];ans:number;solution:string; type:'x2'|'arith'|'fib'}>;
   patternScore:number;
-  patternHist:{seq:number[];ans:number;solution:string}[];
+  patternHist:{seq:number[];ans:number;solution:string; type:'x2'|'arith'|'fib'}[];
   patternInput:string; setPatternInput:(s:string)=>void;
   patternFeedback: null | 'correct' | 'wrong';
   patternReveal: boolean;
   onPatternSubmit: ()=>void; onPatternNext: ()=>void; onPatternPrev: ()=>void; onPatternReveal: ()=>void;
 }){
   return (
-    <Card className="bg-white border border-black/10">
-      <CardHeader className="pb-2"><CardTitle className="text-sm text-neutral-600">Focus</CardTitle></CardHeader>
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Focus</CardTitle></CardHeader>
       <CardContent>
         <Tabs defaultValue="quant">
           <TabsList className="grid grid-cols-3 w-full">
@@ -838,7 +900,7 @@ function FocusView(props:{
           <TabsContent value="quant" className="mt-4 space-y-3">
             <div className="text-base font-medium">{props.quantQ.prompt}</div>
             {props.quantReveal && (
-              <div className="text-sm bg-neutral-50 border border-black/10 rounded-lg p-3 space-y-1">
+              <div className="text-sm bg-muted/50 border rounded-lg p-3 space-y-1">
                 {props.quantQ.formula && <div><span className="font-semibold">Formula:</span> {props.quantQ.formula}</div>}
                 <div><span className="font-semibold">Solution:</span> {props.quantQ.solution}</div>
               </div>
@@ -850,8 +912,8 @@ function FocusView(props:{
               <Button variant="secondary" onClick={props.onQuantReveal}>Reveal</Button>
               <Button variant="secondary" onClick={props.onQuantNext}>Next</Button>
             </div>
-            <div className="flex items-center gap-3 text-xs text-neutral-600">
-              <span>Score <span className="text-neutral-800 font-semibold">{props.quantScore}</span></span>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span>Score <span className="text-foreground font-semibold">{props.quantScore}</span></span>
               {props.quantFeedback==='correct' && <span className="text-green-600">✓ correct</span>}
               {props.quantFeedback==='wrong' && <span className="text-red-600">✗ try again</span>}
             </div>
@@ -860,15 +922,15 @@ function FocusView(props:{
           {/* Vocab */}
           <TabsContent value="vocab" className="mt-4 space-y-3">
             <div className="text-lg font-medium">{props.vocab[0]}</div>
-            <div className="text-sm text-neutral-600">{props.vocab[1]}</div>
-            <Button variant="secondary" onClick={props.nextWord}>Next</Button>
+            <div className="text-sm text-muted-foreground">{props.vocab[1]}</div>
+            <Button variant="secondary" onClick={props.nextWord}>Shuffle</Button>
           </TabsContent>
 
           {/* Pattern — mirrors Quant UX */}
           <TabsContent value="pattern" className="mt-4 space-y-3">
             <div className="text-lg font-mono">{props.patternRef.current?.seq.join(', ')}, ?</div>
             {props.patternReveal && (
-              <div className="text-sm bg-neutral-50 border border-black/10 rounded-lg p-3 space-y-1">
+              <div className="text-sm bg-muted/50 border rounded-lg p-3 space-y-1">
                 <div><span className="font-semibold">Solution:</span> {props.patternRef.current?.solution}. Answer = <span className="font-semibold">{props.patternRef.current?.ans}</span></div>
               </div>
             )}
@@ -887,8 +949,8 @@ function FocusView(props:{
               <Button variant="secondary" onClick={props.onPatternReveal}>Reveal</Button>
               <Button variant="secondary" onClick={props.onPatternNext}>Next</Button>
             </div>
-            <div className="flex items-center gap-3 text-xs text-neutral-600">
-              <span>Streak <span className="text-neutral-800 font-semibold">{props.patternScore}</span></span>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span>Streak <span className="text-foreground font-semibold">{props.patternScore}</span></span>
               {props.patternFeedback==='correct' && <span className="text-green-600">✓ correct</span>}
               {props.patternFeedback==='wrong' && <span className="text-red-600">✗ try again</span>}
             </div>
@@ -902,21 +964,21 @@ function FocusView(props:{
 function HistoryView({ sessions, onClear }: { sessions: Session[]; onClear: () => void; }){
   return (
     <div className="grid gap-6">
-      <Card className="bg-white border border-black/10">
+      <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm text-neutral-600">Recent Sessions</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">Recent Sessions</CardTitle>
             <Button variant="secondary" size="sm" onClick={onClear}><Trash2 className="h-4 w-4 mr-1"/>Clear</Button>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-3 text-sm text-neutral-700">
-          {sessions.length === 0 && <div className="text-neutral-500">No sessions yet. Hit Play to start your first.</div>}
+        <CardContent className="grid gap-3 text-sm text-muted-foreground">
+          {sessions.length === 0 && <div className="text-muted-foreground/80">No sessions yet. Hit Play to start your first.</div>}
           {sessions.map((s, i) => {
             const d = new Date(s.endedAt);
             const date = formatDate(d);
             const dur = `${s.durationMin}m`;
             return (
-              <div key={s.startedAt+":"+i} className="flex items-center justify-between border-b border-black/5 pb-2 last:border-b-0 last:pb-0">
+              <div key={s.startedAt+":"+i} className="flex items-center justify-between border-b pb-2 last:border-b-0 last:pb-0">
                 <span>{date} · {dur} · {BANDS[s.band].name}</span>
                 <span className="text-emerald-600">✓</span>
               </div>
@@ -924,12 +986,12 @@ function HistoryView({ sessions, onClear }: { sessions: Session[]; onClear: () =
           })}
         </CardContent>
       </Card>
-      <Card className="bg-white border border-black/10">
-        <CardHeader className="pb-2"><CardTitle className="text-sm text-neutral-600">Badges</CardTitle></CardHeader>
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Badges</CardTitle></CardHeader>
         <CardContent className="flex gap-3 text-sm">
-          <span className="px-3 py-2 rounded-xl border border-black/10 bg-white">Day 1</span>
-          <span className="px-3 py-2 rounded-xl border border-black/10 bg-white opacity-60">3 Day Streak</span>
-          <span className="px-3 py-2 rounded-xl border border-black/10 bg-white opacity-60">7 Day Streak</span>
+          <span className="px-3 py-2 rounded-xl border bg-card">Day 1</span>
+          <span className="px-3 py-2 rounded-xl border bg-card opacity-60">3 Day Streak</span>
+          <span className="px-3 py-2 rounded-xl border bg-card opacity-60">7 Day Streak</span>
         </CardContent>
       </Card>
     </div>
@@ -938,8 +1000,8 @@ function HistoryView({ sessions, onClear }: { sessions: Session[]; onClear: () =
 
 function NavItem({icon,label,active,onClick}:{icon:React.ReactNode;label:string;active:boolean;onClick:()=>void;}){
   return (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center py-2 rounded-xl ${active? 'text-neutral-900' : 'text-neutral-500'}`}>
-      <div className={`p-2 rounded-full ${active? 'bg-neutral-200' : 'bg-transparent'}`}>{icon}</div>
+    <button onClick={onClick} className={`flex flex-col items-center justify-center py-2 rounded-xl ${active? 'text-foreground' : 'text-muted-foreground'}`}>
+      <div className={`p-2 rounded-full ${active? 'bg-muted' : 'bg-transparent'}`}>{icon}</div>
       <div className="text-[11px] mt-1">{label}</div>
     </button>
   );
@@ -948,7 +1010,7 @@ function NavItem({icon,label,active,onClick}:{icon:React.ReactNode;label:string;
 function QuickField({label,value,min,max,step,onChange}:{label:string;value:number;min:number;max:number;step:number;onChange:(n:number)=>void;}){
   return (
     <div className="space-y-2">
-      <Label className="text-xs text-neutral-500">{label}</Label>
+      <Label className="text-xs text-muted-foreground">{label}</Label>
       <div className="flex items-center gap-3">
         <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v])=>onChange(Number(v))} />
         <Input className="w-24" type="number" value={value} min={min} max={max} step={step} onChange={e=>onChange(Number(e.target.value||0))} />
@@ -960,7 +1022,7 @@ function QuickField({label,value,min,max,step,onChange}:{label:string;value:numb
 function Field({ label, value, setValue, min, max, step, isFloat }: { label: string; value: number; setValue: (n: number) => void; min: number; max: number; step: number; isFloat?: boolean; }) {
   return (
     <div className="space-y-2">
-      <Label className="text-xs text-neutral-500">{label}</Label>
+      <Label className="text-xs text-muted-foreground">{label}</Label>
       <div className="flex items-center gap-3">
         <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => setValue(isFloat ? Number(v) : Math.round(v))} />
         <Input className="w-24" type="number" value={value} min={min} max={max} step={step}
@@ -973,11 +1035,11 @@ function Field({ label, value, setValue, min, max, step, isFloat }: { label: str
 function SelectWave({ value, setValue }: { value: OscillatorType; setValue: (w: OscillatorType) => void; }) {
   return (
     <div className="space-y-2">
-      <Label className="text-xs text-neutral-500">Wave</Label>
+      <Label className="text-xs text-muted-foreground">Wave</Label>
       <div className="grid grid-cols-4 gap-2">
         {["sine", "triangle", "square", "sawtooth"].map((w) => (
           <button key={w} onClick={() => setValue(w as OscillatorType)}
-            className={`text-xs rounded-md px-2 py-1 border transition ${value === w ? "border-neutral-600 bg-neutral-100" : "border-black/10 bg-white"}`}>{w}</button>
+            className={`text-xs rounded-md px-2 py-1 border transition ${value === w ? "border-foreground/80 bg-muted" : "border bg-card"}`}>{w}</button>
         ))}
       </div>
     </div>
@@ -985,7 +1047,7 @@ function SelectWave({ value, setValue }: { value: OscillatorType; setValue: (w: 
 }
 
 // ------------------------
-// Minimal runtime tests (extended)
+// Minimal runtime tests
 // ------------------------
 if (typeof window !== "undefined" && !window.__NBS_TESTED__) {
   window.__NBS_TESTED__ = true;
