@@ -18,6 +18,33 @@ declare global {
   }
 }
 
+/* ===============================
+   Wave-in-Triangle Icon (NEW)
+   =============================== */
+function IconWaveTriangle(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <defs>
+        <clipPath id="tri-clip">
+          <path d="M12 3 L21 19 H3 Z" />
+        </clipPath>
+      </defs>
+      {/* Triangle outline */}
+      <path d="M12 3 L21 19 H3 Z" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      {/* Wave clipped to triangle */}
+      <g clipPath="url(#tri-clip)">
+        <path
+          d="M1 15 C 4 11, 8 19, 11 15 C 14 11, 18 19, 23 15"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
+  );
+}
+
 // ------------------------------------------------------------
 // Neon Binaural Studio — 2025 Revamp
 // ------------------------------------------------------------
@@ -598,8 +625,18 @@ export default function NeonBinauralStudio() {
         {/* Top bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="text-2xl font-semibold tracking-tight">Neon Binaural</div>
-            {playing && <Badge variant="outline" className="text-emerald-700 border-emerald-300">LIVE</Badge>}
+            {/* ============ Replaced title with pill button (NEW) ============ */}
+            <button
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm
+                ${playing ? "border-red-300/60 text-red-700 bg-white ring-2 ring-red-300/30" : "border-black/10 text-slate-900 bg-white/80 backdrop-blur"}
+              `}
+              aria-label="Neon Binaural"
+            >
+              <IconWaveTriangle className="h-4 w-4" />
+              <span>Neon Binaural</span>
+            </button>
+
+            {playing && <Badge variant="outline" className="text-red-700 border-red-300">LIVE</Badge>}
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm">
             <NavItem icon={<Home size={16}/>} label="Home" active={tab==='home'} onClick={()=>setTab('home')} />
