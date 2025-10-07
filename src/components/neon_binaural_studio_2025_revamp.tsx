@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { History, Headphones, Star, StarOff, Play, Pause, Home, SlidersHorizontal, Brain, BookOpenText, Activity, Trash2 } from "lucide-react";
+import { History, Headphones, Star, Play, Pause, Home, SlidersHorizontal, Brain, BookOpenText, Activity, Trash2 } from "lucide-react";
 
 /* ---- DOM typings to avoid any ---- */
 declare global {
@@ -46,7 +46,7 @@ function IconWaveTriangle(props: React.SVGProps<SVGSVGElement>) {
 }
 
 // ------------------------------------------------------------
-// Neon Binaural Studio — 2025 Revamp
+// Brain Studio — 2025 Revamp
 // ------------------------------------------------------------
 
 const BANDS = {
@@ -282,30 +282,45 @@ function ProgressRing({ value, size = 88, color = "#ef4444", bg = "rgba(0,0,0,.0
   );
 }
 
-function HeroControl({ playing, ring, deadline, onStart, onStop, accent, streak }: { playing: boolean; ring: number; deadline: number | null; onStart: () => void; onStop: () => void; accent: string; streak: number; }) {
-  const [mmss, setMmss] = useState("00:00");
-  useRaf(() => {
-    if (!deadline) { setMmss("00:00"); return; }
-    const ms = Math.max(0, deadline - Date.now());
-    const m = Math.floor(ms / 60000); const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
-    setMmss(`${String(m).padStart(2, '0')}:${s}`);
-  }, !!deadline);
+function HeroControl({ playing, ring, deadline, onStart, onStop, accent }: { playing: boolean; ring: number; deadline: number | null; onStart: () => void; onStop: () => void; accent: string; }) {
+  const [mmss, setMmss] = useState("");
+
+  useEffect(() => {
+    if (!deadline) { setMmss(""); return; }
+    const update = () => {
+      const ms = Math.max(0, deadline - Date.now());
+      const m = Math.floor(ms / 60000);
+      const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, "0");
+      setMmss(`${String(m).padStart(2, "0")}:${s}`);
+    };
+    update();
+    const id = window.setInterval(update, 500);
+    return () => window.clearInterval(id);
+  }, [deadline]);
+
+  const glowStyle = playing
+    ? {
+        boxShadow: `0 0 0 6px ${accent}1A, 0 0 24px ${accent}4D`,
+        transition: "box-shadow 0.3s ease, transform 0.3s ease",
+      }
+    : { transition: "box-shadow 0.3s ease, transform 0.3s ease" };
+
   return (
     <div className="grid place-items-center gap-2">
       <button
         onClick={playing ? onStop : onStart}
-        className="relative w-24 h-24 rounded-full grid place-items-center select-none bg-card shadow-lg border"
+        className="relative w-28 h-28 rounded-full grid place-items-center select-none bg-card shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        style={glowStyle}
         aria-label={playing ? "Pause" : "Play"}
       >
-        <ProgressRing value={ring} size={96} color={playing ? accent : "#111827"} bg="rgba(0,0,0,.08)" />
+        <ProgressRing value={ring} size={116} color={playing ? accent : "#111827"} bg="rgba(0,0,0,.08)" />
         <div className="absolute inset-0 grid place-items-center">
           <div className="flex flex-col items-center gap-1">
             <div className="text-2xl" style={{ color: playing ? accent : "#111827" }}>{playing ? <Pause /> : <Play />}</div>
-            <div className="text-[11px] font-mono text-muted-foreground">{mmss}</div>
+            {mmss && <div className="text-[11px] font-mono text-muted-foreground">{mmss}</div>}
           </div>
         </div>
       </button>
-      <div className="text-[11px] text-muted-foreground">Streak: <span className="font-semibold text-foreground">{streak} day{streak===1?"":"s"}</span></div>
     </div>
   );
 }
@@ -450,28 +465,6 @@ export default function NeonBinauralStudio() {
   useEffect(() => { if (playing && oscARef.current) oscARef.current.type = waveA; }, [waveA, playing]);
   useEffect(() => { if (playing && oscBRef.current) oscBRef.current.type = waveB; }, [waveB, playing]);
 
-  // Timer ring
-  useRaf(() => {
-    if (!deadline) return;
-    const now = Date.now();
-    const total = minutes * 60 * 1000;
-    const left = Math.max(0, deadline - now);
-    setRing(1 - left / total);
-    if (left === 0 && playing) stop();
-  }, !!deadline);
-
-  // Oscilloscope draw (guard for null canvases + only on Home tab)
-  useRaf(() => {
-    if (typeof document !== 'undefined' && document.hidden) return;
-    if (tab !== 'home') return;
-    const cL = scopeLRef.current;
-    const cR = scopeRRef.current;
-    if (analyserLRef.current && cL) drawScopeFromAnalyser(analyserLRef.current, cL, "#111827", BANDS[band].color);
-    else drawScopeFake(cL, "#111827", BANDS[band].color);
-    if (analyserRRef.current && cR) drawScopeFromAnalyser(analyserRRef.current, cR, "#111827", BANDS[band].color);
-    else drawScopeFake(cR, "#111827", BANDS[band].color);
-  }, true);
-
   function ramp(param: AudioParam, value: number, ctx: AudioContext) {
     const now = ctx.currentTime;
     param.setValueAtTime(param.value, now);
@@ -518,7 +511,7 @@ export default function NeonBinauralStudio() {
     if (minutes > 0) setDeadline(Date.now() + minutes * 60 * 1000);
   }
 
-  function stop() {
+  const stop = useCallback(() => {
     if (ctxRef.current) {
       const ctx = ctxRef.current;
       const t = ctx.currentTime + 0.06;
@@ -547,7 +540,42 @@ export default function NeonBinauralStudio() {
       setSessions(prev => [rec, ...prev].slice(0, 200));
       sessionStartRef.current = null;
     }
-  }
+  }, []);
+
+  // Timer ring
+  useRaf(() => {
+    if (!deadline) return;
+    const now = Date.now();
+    const total = minutes * 60 * 1000;
+    const left = Math.max(0, deadline - now);
+    setRing(1 - left / total);
+    if (left === 0 && playing) stop();
+  }, !!deadline);
+
+  useEffect(() => {
+    if (!playing || !deadline) return;
+    const remaining = Math.max(0, deadline - Date.now());
+    if (remaining === 0) {
+      stop();
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      stop();
+    }, remaining);
+    return () => window.clearTimeout(timeout);
+  }, [playing, deadline, stop]);
+
+  // Oscilloscope draw (guard for null canvases + only on Home tab)
+  useRaf(() => {
+    if (typeof document !== 'undefined' && document.hidden) return;
+    if (tab !== 'home') return;
+    const cL = scopeLRef.current;
+    const cR = scopeRRef.current;
+    if (analyserLRef.current && cL) drawScopeFromAnalyser(analyserLRef.current, cL, "#111827", BANDS[band].color);
+    else drawScopeFake(cL, "#111827", BANDS[band].color);
+    if (analyserRRef.current && cR) drawScopeFromAnalyser(analyserRRef.current, cR, "#111827", BANDS[band].color);
+    else drawScopeFake(cR, "#111827", BANDS[band].color);
+  }, true);
 
   // Quant handlers
   function handleQuantSubmit(){
@@ -619,35 +647,10 @@ export default function NeonBinauralStudio() {
     s.durationMin >= SESSION_MINUTES
   ).length;
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-5xl mx-auto p-16 pt-8 pb-28 space-y-16">
-        {/* Top bar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* ============ Replaced title with pill button (NEW) ============ */}
-            <button
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm
-                ${playing ? "border-red-300/60 text-red-700 bg-white ring-2 ring-red-300/30" : "border-black/10 text-slate-900 bg-white/80 backdrop-blur"}
-              `}
-              aria-label="Neon Binaural"
-            >
-              <IconWaveTriangle className="h-4 w-4" />
-              <span>Neon Binaural</span>
-            </button>
-
-            {playing && <Badge variant="outline" className="text-red-700 border-red-300">LIVE</Badge>}
-          </div>
-          <div className="hidden md:flex items-center gap-6 text-sm">
-            <NavItem icon={<Home size={16}/>} label="Home" active={tab==='home'} onClick={()=>setTab('home')} />
-            <NavItem icon={<Brain size={16}/>} label="Soundscapes" active={tab==='soundscapes'} onClick={()=>setTab('soundscapes')} />
-            <NavItem icon={<SlidersHorizontal size={16}/>} label="Studio" active={tab==='studio'} onClick={()=>setTab('studio')} />
-            <NavItem icon={<BookOpenText size={16}/>} label="Focus" active={tab==='focus'} onClick={()=>setTab('focus')} />
-            <NavItem icon={<Activity size={16}/>} label="History" active={tab==='history'} onClick={()=>setTab('history')} />
-          </div>
-        </div>
-
-        {tab === 'home' && (
+  const activeView = (() => {
+    switch (tab) {
+      case "home":
+        return (
           <HomeView
             baseHz={baseHz}
             offset={offset}
@@ -666,36 +669,45 @@ export default function NeonBinauralStudio() {
             streak={streak}
             todayCount={todayCount}
           />
-        )}
-
-        {tab === 'soundscapes' && (
+        );
+      case "soundscapes":
+        return (
           <SoundscapesView
             band={band}
             favorites={favorites}
             setFavorites={setFavorites}
             onPick={pickBandAndPlay}
           />
-        )}
-
-        {tab === 'studio' && (
+        );
+      case "studio":
+        return (
           <StudioView
-            freqA={freqA} setFreqA={setFreqA}
-            freqB={freqB} setFreqB={setFreqB}
-            gainA={gainA} setGainA={setGainA}
-            gainB={gainB} setGainB={setGainB}
-            panA={panA} setPanA={setPanA}
-            panB={panB} setPanB={setPanB}
-            waveA={waveA} setWaveA={setWaveA}
-            waveB={waveB} setWaveB={setWaveB}
+            freqA={freqA}
+            setFreqA={setFreqA}
+            freqB={freqB}
+            setFreqB={setFreqB}
+            gainA={gainA}
+            setGainA={setGainA}
+            gainB={gainB}
+            setGainB={setGainB}
+            panA={panA}
+            setPanA={setPanA}
+            panB={panB}
+            setPanB={setPanB}
+            waveA={waveA}
+            setWaveA={setWaveA}
+            waveB={waveB}
+            setWaveB={setWaveB}
           />
-        )}
-
-        {tab === 'focus' && (
+        );
+      case "focus":
+        return (
           <FocusView
             // Quant
             quantQ={quantQ}
             quantInput={quantInput}
-            setQuantInput={setQuantInput} quantFeedback={quantFeedback}
+            setQuantInput={setQuantInput}
+            quantFeedback={quantFeedback}
             quantReveal={quantReveal}
             quantScore={quantScore}
             onQuantSubmit={handleQuantSubmit}
@@ -718,20 +730,51 @@ export default function NeonBinauralStudio() {
             onPatternPrev={handlePatternPrev}
             onPatternReveal={handlePatternReveal}
           />
-        )}
+        );
+      case "history":
+        return <HistoryView sessions={sessions} onClear={() => { setSessions([]); }} />;
+      default:
+        return null;
+    }
+  })();
 
-        {tab === 'history' && (
-          <HistoryView sessions={sessions} onClear={()=>{ setSessions([]); }} />
-        )}
+  return (
+    <div className="min-h-screen bg-[#F7F7F7] text-foreground">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-12 pt-10 md:pt-12 pb-28 space-y-8">
+        <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white/95 border border-black/10 px-6 py-5 shadow-[0_8px_0_rgba(15,23,42,0.08)]">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className={`inline-flex items-center gap-2 rounded-full border border-black/10 px-5 py-2 text-base font-semibold shadow-[0_4px_0_rgba(15,23,42,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_0_rgba(15,23,42,0.15)]
+                ${playing ? "text-red-700 bg-rose-100 ring-2 ring-red-200" : "text-slate-900 bg-amber-100/80 backdrop-blur"}
+              `}
+              aria-label="Brain"
+            >
+              <IconWaveTriangle className="h-4 w-4" />
+              <span>Brain</span>
+            </button>
+            {playing && <Badge variant="outline" className="text-red-700 border-red-300">LIVE</Badge>}
+          </div>
+          <nav className="hidden md:flex items-center gap-4 text-sm">
+            <NavItem icon={<Home size={16} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
+            <NavItem icon={<Brain size={16} />} label="Soundscapes" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
+            <NavItem icon={<SlidersHorizontal size={16} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
+            <NavItem icon={<BookOpenText size={16} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
+            <NavItem icon={<Activity size={16} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
+          </nav>
+        </header>
+
+        <main className="rounded-3xl border border-black/10 bg-white shadow-[0_12px_24px_-12px_rgba(15,23,42,0.3)] p-6 md:p-10 space-y-8">
+          {activeView}
+        </main>
       </div>
 
       {/* Bottom nav (mobile) */}
-      <div className="fixed bottom-0 inset-x-0 bg-card border-t p-2 grid grid-cols-5 md:hidden">
-        <NavItem icon={<Home size={18}/>} label="Home" active={tab==='home'} onClick={()=>setTab('home')} />
-        <NavItem icon={<Brain size={18}/>} label="Sound" active={tab==='soundscapes'} onClick={()=>setTab('soundscapes')} />
-        <NavItem icon={<SlidersHorizontal size={18}/>} label="Studio" active={tab==='studio'} onClick={()=>setTab('studio')} />
-        <NavItem icon={<BookOpenText size={18}/>} label="Focus" active={tab==='focus'} onClick={()=>setTab('focus')} />
-        <NavItem icon={<Activity size={18}/>} label="History" active={tab==='history'} onClick={()=>setTab('history')} />
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-3xl bg-white/95 border border-black/10 rounded-2xl shadow-[0_10px_20px_-10px_rgba(15,23,42,0.25)] p-2 grid grid-cols-5 gap-2 md:hidden">
+        <NavItem icon={<Home size={18} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
+        <NavItem icon={<Brain size={18} />} label="Sound" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
+        <NavItem icon={<SlidersHorizontal size={18} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
+        <NavItem icon={<BookOpenText size={18} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
+        <NavItem icon={<Activity size={18} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
       </div>
     </div>
   );
@@ -796,24 +839,35 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
   return (
     <div className="grid gap-12">
       {/* Now Playing */}
-      <Card>
+      <Card className="border-4 border-black/15">
         <CardHeader className="pb-0">
-          <CardTitle className="text-sm text-muted-foreground">Now Playing</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4 grid md:grid-cols-3 gap-8 items-center">
-          {/* Visualizer (taller to align with controls) */}
-          <div className="md:col-span-2 grid gap-3">
-            <div className="h-44 rounded-xl border bg-card overflow-hidden">
-              <canvas ref={scopeLRef} className="h-full w-full" />
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm text-muted-foreground">Now Playing</CardTitle>
+            <div className="hidden md:block text-xs font-semibold text-muted-foreground">
+              Streak: {streak} day{streak===1?"":"s"}
             </div>
-            <div className="h-44 rounded-xl border bg-card overflow-hidden">
-              <canvas ref={scopeRRef} className="h-full w-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
+          {/* Visualizer */}
+          <div className="grid gap-5">
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">Left Channel</div>
+              <div className="rounded-2xl border-4 border-black/10 bg-card h-48 overflow-hidden">
+                <canvas ref={scopeLRef} className="h-full w-full" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">Right Channel</div>
+              <div className="rounded-2xl border-4 border-black/10 bg-card h-48 overflow-hidden">
+                <canvas ref={scopeRRef} className="h-full w-full" />
+              </div>
             </div>
           </div>
 
           {/* Controls */}
-          <div className="flex flex-col items-center gap-6">
-            <HeroControl playing={playing} ring={ring} deadline={deadline} onStart={onStart} onStop={onStop} accent={accent} streak={streak} />
+          <div className="flex flex-col items-center gap-6 pt-4 lg:pt-8">
+            <HeroControl playing={playing} ring={ring} deadline={deadline} onStart={onStart} onStop={onStop} accent={accent} />
             <div className="w-full grid gap-4">
               <QuickField label="Base Hz" value={baseHz} min={60} max={1200} step={1} onChange={setBaseHz} />
               <QuickField label="Offset" value={offset} min={0} max={40} step={0.1} onChange={setOffset} />
@@ -826,10 +880,11 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
       {/* Daily Dose */}
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Daily Dose</CardTitle></CardHeader>
-        <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=1? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border'}`}>{todayCount>=1? '☑' : '☐'} Session 1</span>
-          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=2? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border opacity-60'}`}>{todayCount>=2? '☑' : '☐'} Session 2</span>
-          <span className={`inline-flex items-center px-2 py-1 rounded-full border ${todayCount>=3? 'border-emerald-300 bg-emerald-50 text-emerald-700':'border opacity-60'}`}>{todayCount>=3? '☑' : '☐'} Session 3</span>
+        <CardContent className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-4 py-1.5 rounded-full border-2 border-black/10 transition-transform duration-200 hover:-translate-y-0.5 ${todayCount>=1? 'bg-yellow-300 text-yellow-900 font-semibold shadow-[0_6px_0_rgba(253,224,71,0.65)]' : 'bg-white/70 text-muted-foreground'}`}>Session 1</span>
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-4 py-1.5 rounded-full border-2 border-black/10 transition-transform duration-200 hover:-translate-y-0.5 ${todayCount>=2? 'bg-yellow-300 text-yellow-900 font-semibold shadow-[0_6px_0_rgba(253,224,71,0.65)]' : 'bg-white/70 text-muted-foreground/70'}`}>Session 2</span>
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-4 py-1.5 rounded-full border-2 border-black/10 transition-transform duration-200 hover:-translate-y-0.5 ${todayCount>=3? 'bg-yellow-300 text-yellow-900 font-semibold shadow-[0_6px_0_rgba(253,224,71,0.65)]' : 'bg-white/70 text-muted-foreground/70'}`}>Session 3</span>
+          <p className="w-full text-xs text-foreground/70 pt-1 italic">Sessions register after 14 minutes of continuous playtime.</p>
         </CardContent>
       </Card>
     </div>
@@ -845,30 +900,53 @@ function SoundscapesView({ band, favorites, setFavorites, onPick }:{
       {/* Favorites */}
       <div className="grid gap-3">
         <div className="text-sm text-muted-foreground">My Favorites</div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {favorites.map(k=> <MoodCard key={k} k={k} active={band===k} onPick={()=>onPick(k)} onFav={()=>toggleFav(k)} />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {favorites.map(k=> (
+            <MoodCard
+              key={k}
+              k={k}
+              active={band===k}
+              onPick={()=>onPick(k)}
+              onFav={()=>toggleFav(k)}
+              highlight
+            />
+          ))}
         </div>
       </div>
 
       {/* All */}
       <div className="grid gap-3">
         <div className="text-sm text-muted-foreground">All Moodscapes</div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {(Object.keys(BANDS) as BandKey[]).map(k=> <MoodCard key={k} k={k} active={band===k} onPick={()=>onPick(k)} onFav={()=>toggleFav(k)} />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {(Object.keys(BANDS) as BandKey[])
+            .filter((k) => !favorites.includes(k))
+            .map(k=> (
+              <MoodCard
+                key={k}
+                k={k}
+                active={band===k}
+                onPick={()=>onPick(k)}
+                onFav={()=>toggleFav(k)}
+              />
+            ))}
         </div>
       </div>
     </div>
   );
 }
 
-function MoodCard({ k, active, onPick, onFav }:{ k:BandKey; active:boolean; onPick:()=>void; onFav:()=>void; }){
+function MoodCard({ k, active, onPick, onFav, highlight }:{ k:BandKey; active:boolean; onPick:()=>void; onFav:()=>void; highlight?:boolean; }){
   const v = BANDS[k];
+  const inFavorites = highlight ?? false;
+  const starProps = inFavorites
+    ? { fill: "#FACC15", stroke: "#F59E0B", className: "h-4 w-4 drop-shadow-sm" }
+    : { fill: "none", stroke: "#9CA3AF", strokeDasharray: "4 3", className: "h-4 w-4" };
   return (
-    <button onClick={onPick} className={`relative rounded-2xl border px-3 py-4 text-left bg-card ${active? 'border-foreground/40' : 'border'} group`}>
+    <button onClick={onPick} className={`relative rounded-3xl border-2 border-black/10 px-4 py-5 text-left bg-white/90 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_16px_0_rgba(15,23,42,0.1)] ${active? 'ring-2 ring-accent/40' : ''} group`}>
       <div className="flex items-center justify-between">
         <div className="text-2xl" aria-hidden>{v.icon}</div>
-        <div onClick={(e)=>{e.stopPropagation(); onFav();}} className="opacity-70 hover:opacity-100">
-          {active ? <Star fill="currentColor" size={18}/> : <StarOff size={18}/>}
+        <div onClick={(e)=>{e.stopPropagation(); onFav();}} className="opacity-80 hover:opacity-100 transition">
+          <Star {...starProps} />
         </div>
       </div>
       <div className="mt-3 font-medium text-card-foreground">{v.name}</div>
@@ -935,7 +1013,7 @@ function FocusView(props:{
       <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Focus</CardTitle></CardHeader>
       <CardContent>
         <Tabs defaultValue="quant">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
             <TabsTrigger value="quant">Quant</TabsTrigger>
             <TabsTrigger value="vocab">Vocab</TabsTrigger>
             <TabsTrigger value="pattern">Pattern</TabsTrigger>
@@ -950,14 +1028,14 @@ function FocusView(props:{
                 <div><span className="font-semibold">Solution:</span> {props.quantQ.solution}</div>
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <Input className="w-40" type="text" inputMode="decimal" value={props.quantInput} onChange={e=>props.setQuantInput(e.target.value)} placeholder="answer" onKeyDown={e=>{ if(e.key==='Enter') props.onQuantSubmit(); }} />
-              <Button onClick={props.onQuantSubmit}>Submit</Button>
-              <Button variant="secondary" onClick={props.onQuantPrev}><History className="h-4 w-4 mr-1"/>Prev</Button>
-              <Button variant="secondary" onClick={props.onQuantReveal}>Reveal</Button>
-              <Button variant="secondary" onClick={props.onQuantNext}>Next</Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input className="w-full sm:w-40" type="text" inputMode="decimal" value={props.quantInput} onChange={e=>props.setQuantInput(e.target.value)} placeholder="answer" onKeyDown={e=>{ if(e.key==='Enter') props.onQuantSubmit(); }} />
+              <Button className="w-full sm:w-auto" onClick={props.onQuantSubmit}>Submit</Button>
+              <Button className="w-full sm:w-auto" variant="secondary" onClick={props.onQuantPrev}><History className="h-4 w-4 mr-1"/>Prev</Button>
+              <Button className="w-full sm:w-auto" variant="secondary" onClick={props.onQuantReveal}>Reveal</Button>
+              <Button className="w-full sm:w-auto" variant="secondary" onClick={props.onQuantNext}>Next</Button>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>Score <span className="text-foreground font-semibold">{props.quantScore}</span></span>
               {props.quantFeedback==='correct' && <span className="text-green-600">✓ correct</span>}
               {props.quantFeedback==='wrong' && <span className="text-red-600">✗ try again</span>}
@@ -979,9 +1057,9 @@ function FocusView(props:{
                 <div><span className="font-semibold">Solution:</span> {props.patternRef.current?.solution}. Answer = <span className="font-semibold">{props.patternRef.current?.ans}</span></div>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Input
-                className="w-32"
+                className="w-full sm:w-32"
                 type="text"
                 inputMode="numeric"
                 value={props.patternInput}
@@ -989,12 +1067,12 @@ function FocusView(props:{
                 placeholder="answer"
                 onKeyDown={e => { if (e.key === 'Enter') props.onPatternSubmit(); }}
               />
-              <Button onClick={props.onPatternSubmit}>Submit</Button>
-              <Button variant="secondary" onClick={props.onPatternPrev}><History className="h-4 w-4 mr-1" />Prev</Button>
-              <Button variant="secondary" onClick={props.onPatternReveal}>Reveal</Button>
-              <Button variant="secondary" onClick={props.onPatternNext}>Next</Button>
+              <Button className="w-full sm:w-auto" onClick={props.onPatternSubmit}>Submit</Button>
+              <Button className="w-full sm:w-auto" variant="secondary" onClick={props.onPatternPrev}><History className="h-4 w-4 mr-1" />Prev</Button>
+              <Button className="w-full sm:w-auto" variant="secondary" onClick={props.onPatternReveal}>Reveal</Button>
+              <Button className="w-full sm:w-auto" variant="secondary" onClick={props.onPatternNext}>Next</Button>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>Streak <span className="text-foreground font-semibold">{props.patternScore}</span></span>
               {props.patternFeedback==='correct' && <span className="text-green-600">✓ correct</span>}
               {props.patternFeedback==='wrong' && <span className="text-red-600">✗ try again</span>}
@@ -1011,9 +1089,9 @@ function HistoryView({ sessions, onClear }: { sessions: Session[]; onClear: () =
     <div className="grid gap-6">
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-sm text-muted-foreground">Recent Sessions</CardTitle>
-            <Button variant="secondary" size="sm" onClick={onClear}><Trash2 className="h-4 w-4 mr-1"/>Clear</Button>
+            <Button className="w-full sm:w-auto" variant="secondary" size="sm" onClick={onClear}><Trash2 className="h-4 w-4 mr-1"/>Clear</Button>
           </div>
         </CardHeader>
         <CardContent className="grid gap-3 text-sm text-muted-foreground">
@@ -1023,8 +1101,8 @@ function HistoryView({ sessions, onClear }: { sessions: Session[]; onClear: () =
             const date = formatDate(d);
             const dur = `${s.durationMin}m`;
             return (
-              <div key={s.startedAt+":"+i} className="flex items-center justify-between border-b pb-2 last:border-b-0 last:pb-0">
-                <span>{date} · {dur} · {BANDS[s.band].name}</span>
+              <div key={s.startedAt+":"+i} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 last:border-b-0 last:pb-0">
+                <span className="text-sm">{date} · {dur} · {BANDS[s.band].name}</span>
                 <span className="text-emerald-600">✓</span>
               </div>
             );
@@ -1033,7 +1111,7 @@ function HistoryView({ sessions, onClear }: { sessions: Session[]; onClear: () =
       </Card>
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Badges</CardTitle></CardHeader>
-        <CardContent className="flex gap-3 text-sm">
+        <CardContent className="flex flex-wrap gap-2 sm:gap-3 text-sm">
           <span className="px-3 py-2 rounded-xl border bg-card">Day 1</span>
           <span className="px-3 py-2 rounded-xl border bg-card opacity-60">3 Day Streak</span>
           <span className="px-3 py-2 rounded-xl border bg-card opacity-60">7 Day Streak</span>
@@ -1045,8 +1123,11 @@ function HistoryView({ sessions, onClear }: { sessions: Session[]; onClear: () =
 
 function NavItem({icon,label,active,onClick}:{icon:React.ReactNode;label:string;active:boolean;onClick:()=>void;}){
   return (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center py-2 rounded-xl ${active? 'text-foreground' : 'text-muted-foreground'}`}>
-      <div className={`p-2 rounded-full ${active? 'bg-muted' : 'bg-transparent'}`}>{icon}</div>
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl border-2 border-black/5 bg-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-foreground/30 ${active? 'text-foreground shadow-md' : 'text-muted-foreground'}`}
+    >
+      <div className={`p-2 rounded-full transition-all duration-200 ${active? 'bg-accent/60 shadow-sm' : 'bg-white/60 hover:bg-accent/30'}`}>{icon}</div>
       <div className="text-[11px] mt-1">{label}</div>
     </button>
   );
@@ -1056,9 +1137,11 @@ function QuickField({label,value,min,max,step,onChange}:{label:string;value:numb
   return (
     <div className="space-y-2">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex items-center gap-3">
-        <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v])=>onChange(Number(v))} />
-        <Input className="w-24" type="number" value={value} min={min} max={max} step={step} onChange={e=>onChange(Number(e.target.value||0))} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="w-full sm:flex-1">
+          <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v])=>onChange(Number(v))} />
+        </div>
+        <Input className="w-full sm:w-24" type="number" value={value} min={min} max={max} step={step} onChange={e=>onChange(Number(e.target.value||0))} />
       </div>
     </div>
   );
@@ -1068,9 +1151,11 @@ function Field({ label, value, setValue, min, max, step, isFloat }: { label: str
   return (
     <div className="space-y-2">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex items-center gap-3">
-        <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => setValue(isFloat ? Number(v) : Math.round(v))} />
-        <Input className="w-24" type="number" value={value} min={min} max={max} step={step}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="w-full sm:flex-1">
+          <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => setValue(isFloat ? Number(v) : Math.round(v))} />
+        </div>
+        <Input className="w-full sm:w-24" type="number" value={value} min={min} max={max} step={step}
           onChange={e => setValue(isFloat ? Number(e.target.value || 0) : Number.parseInt(e.target.value || "0"))} />
       </div>
     </div>
@@ -1081,7 +1166,7 @@ function SelectWave({ value, setValue }: { value: OscillatorType; setValue: (w: 
   return (
     <div className="space-y-2">
       <Label className="text-xs text-muted-foreground">Wave</Label>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {["sine", "triangle", "square", "sawtooth"].map((w) => (
           <button key={w} onClick={() => setValue(w as OscillatorType)}
             className={`text-xs rounded-md px-2 py-1 border transition ${value === w ? "border-foreground/80 bg-muted" : "border bg-card"}`}>{w}</button>
