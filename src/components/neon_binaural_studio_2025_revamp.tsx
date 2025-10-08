@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,7 +59,74 @@ const BANDS = {
 } as const;
 
 type BandKey = keyof typeof BANDS;
+type TabKey = 'home' | 'soundscapes' | 'studio' | 'focus' | 'history';
 type VocabPair = [word: string, def: string];
+
+const ONBOARDING_STORAGE_KEY = "nbs.onboarding.v1";
+const TAB_LABELS: Record<TabKey, string> = {
+  home: "Home",
+  soundscapes: "Soundscapes",
+  studio: "Studio",
+  focus: "Focus",
+  history: "History",
+};
+const ONBOARDING_STEPS: Array<{
+  tab: TabKey;
+  title: string;
+  summary: string;
+  bullets: string[];
+}> = [
+  {
+    tab: "home",
+    title: "Welcome Home",
+    summary: "Dial in a quick binaural session and watch the live waveform visualizer.",
+    bullets: [
+      "Set the base frequency, beat offset, and session length.",
+      "Start or stop playback with the center control ring.",
+      "Daily Dose helps track your three recommended sessions."
+    ],
+  },
+  {
+    tab: "soundscapes",
+    title: "Pick a Moodscape",
+    summary: "Explore curated brainwave presets and mark your go-to favorites.",
+    bullets: [
+      "Each tile shows the frequency band and when to use it.",
+      "Tap a card to load it instantly and begin playback.",
+      "Use the star icon to surface personal favorites up top."
+    ],
+  },
+  {
+    tab: "studio",
+    title: "Customize the Studio",
+    summary: "Fine-tune oscillator waves, panning, and gain for full control.",
+    bullets: [
+      "Voice A feeds the left ear, Voice B the right.",
+      "Adjust volume and stereo position to balance your mix.",
+      "Swap oscillator shapes to sculpt the tone you prefer."
+    ],
+  },
+  {
+    tab: "focus",
+    title: "Challenge Your Focus",
+    summary: "Warm up your brain with quick math, vocab, and pattern drills.",
+    bullets: [
+      "Quant mode rotates through consulting-style math prompts.",
+      "Vocab flashcards keep language sharp between sessions.",
+      "Pattern labs test recall with sequences and logic riddles."
+    ],
+  },
+  {
+    tab: "history",
+    title: "Review Your Streak",
+    summary: "See what you’ve played recently and keep the streak alive.",
+    bullets: [
+      "Sessions log automatically once you cross 14 minutes.",
+      "Badges unlock as you stack consistent practice days.",
+      "Clear history anytime if you want a fresh reset."
+    ],
+  },
+];
 
 // beefed up bank
 const DEFAULT_WORDS: VocabPair[] = [
@@ -327,7 +394,7 @@ function HeroControl({ playing, ring, deadline, onStart, onStop, accent }: { pla
 
 // ----------- MAIN APP -----------
 export default function NeonBinauralStudio() {
-  const [tab, setTab] = useState<'home'|'soundscapes'|'studio'|'focus'|'history'>("home");
+  const [tab, setTab] = useState<TabKey>("home");
   const [playing, setPlaying] = useState(false);
   const [band, setBand] = useState<BandKey>("theta");
   const [baseHz, setBaseHz] = useState(220);
@@ -371,6 +438,24 @@ export default function NeonBinauralStudio() {
 
   const [vocab, setVocab] = useState<VocabPair>(DEFAULT_WORDS[0]);
   const [vocabRecent, setVocabRecent] = useState<string[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+
+  const markOnboardingSeen = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "1"); } catch {}
+  }, []);
+
+  const clearOnboardingSeen = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.removeItem(ONBOARDING_STORAGE_KEY); } catch {}
+  }, []);
+
+  const lastOnboardingStepIndex = Math.max(ONBOARDING_STEPS.length - 1, 0);
+  const safeOnboardingStepIndex = Math.min(onboardingStep, lastOnboardingStepIndex);
+  const onboardingCurrent = ONBOARDING_STEPS[safeOnboardingStepIndex] ?? ONBOARDING_STEPS[0];
+  const onboardingIsLast = safeOnboardingStepIndex >= lastOnboardingStepIndex;
+  const onboardingProgressPct = Math.round(((safeOnboardingStepIndex + 1) / Math.max(ONBOARDING_STEPS.length, 1)) * 100);
 
   function nextWord() {
     setVocab(cur => {
@@ -436,6 +521,16 @@ export default function NeonBinauralStudio() {
     const s = loadSessions();
     setSessions(s);
     setStreak(computeStreak(s));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const seen = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
+      if (!seen) setShowOnboarding(true);
+    } catch {
+      setShowOnboarding(true);
+    }
   }, []);
 
   // Persist sessions when changed
@@ -577,6 +672,14 @@ export default function NeonBinauralStudio() {
     else drawScopeFake(cR, "#111827", BANDS[band].color);
   }, true);
 
+  useEffect(() => {
+    if (!showOnboarding) return;
+    const step = ONBOARDING_STEPS[onboardingStep] ?? ONBOARDING_STEPS[0];
+    if (step && tab !== step.tab) {
+      setTab(step.tab);
+    }
+  }, [showOnboarding, onboardingStep, tab]);
+
   // Quant handlers
   function handleQuantSubmit(){
     const raw = (quantInput ?? '').toString().trim().replace(',', '.');
@@ -631,6 +734,32 @@ export default function NeonBinauralStudio() {
     });
   }
   function handlePatternReveal(){ setPatternReveal(true); }
+
+  function handleOnboardingPrev() {
+    setOnboardingStep(i => Math.max(i - 1, 0));
+  }
+  function handleOnboardingNext() {
+    if (onboardingIsLast) {
+      handleOnboardingFinish();
+      return;
+    }
+    setOnboardingStep(i => Math.min(i + 1, lastOnboardingStepIndex));
+  }
+  function handleOnboardingFinish() {
+    markOnboardingSeen();
+    setShowOnboarding(false);
+    setOnboardingStep(0);
+  }
+  function handleOnboardingSkip() {
+    markOnboardingSeen();
+    setShowOnboarding(false);
+    setOnboardingStep(0);
+  }
+  function handleReplayTour() {
+    clearOnboardingSeen();
+    setOnboardingStep(0);
+    setShowOnboarding(true);
+  }
 
   // soundscapes helper: pick and auto play
   function pickBandAndPlay(k: BandKey) {
@@ -755,12 +884,12 @@ export default function NeonBinauralStudio() {
             {playing && <Badge variant="outline" className="text-red-700 border-red-300">LIVE</Badge>}
           </div>
           <nav className="hidden md:flex items-center gap-4 text-sm">
-            <NavItem icon={<Home size={16} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
-            <NavItem icon={<Brain size={16} />} label="Soundscapes" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
-            <NavItem icon={<SlidersHorizontal size={16} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
-            <NavItem icon={<BookOpenText size={16} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
-            <NavItem icon={<Activity size={16} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
-          </nav>
+              <NavItem icon={<Home size={16} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
+              <NavItem icon={<Brain size={16} />} label="Soundscapes" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
+              <NavItem icon={<SlidersHorizontal size={16} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
+              <NavItem icon={<BookOpenText size={16} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
+              <NavItem icon={<Activity size={16} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
+            </nav>
         </header>
 
         <main className="rounded-3xl border border-black/10 bg-white shadow-[0_12px_24px_-12px_rgba(15,23,42,0.3)] p-6 md:p-10 space-y-8">
@@ -776,6 +905,67 @@ export default function NeonBinauralStudio() {
         <NavItem icon={<BookOpenText size={18} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
         <NavItem icon={<Activity size={18} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
       </div>
+
+      {!showOnboarding && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleReplayTour}
+          className="fixed right-4 bottom-28 md:right-6 md:bottom-6 z-40 shadow-lg text-xs font-medium"
+        >
+          Replay tour
+        </Button>
+      )}
+
+      {showOnboarding && onboardingCurrent && (
+        <div className="fixed inset-0 z-[80] bg-slate-900/35 flex items-center justify-center px-4 py-10">
+          <div className="w-full max-w-lg">
+            <Card className="relative border-2 border-black/20 shadow-[0_24px_64px_-16px_rgba(15,23,42,0.35)] overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-1 bg-slate-200">
+                <div
+                  className="h-full bg-gradient-to-r from-sky-500 via-violet-500 to-emerald-500 transition-all duration-500 rounded-r-lg"
+                  style={{ width: `${onboardingProgressPct}%` }}
+                />
+              </div>
+              <CardHeader className="space-y-3 pt-7 pb-3">
+                <Badge variant="outline" className="w-fit text-[11px] uppercase tracking-wide">
+                  Step {safeOnboardingStepIndex + 1} of {ONBOARDING_STEPS.length}
+                </Badge>
+                <CardTitle className="text-xl font-semibold">{onboardingCurrent.title}</CardTitle>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {onboardingCurrent.summary}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-2 text-sm text-foreground/90">
+                  {onboardingCurrent.bullets.map((line, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="mt-1.5 inline-block h-1.5 w-1.5 rounded-full bg-foreground/70" aria-hidden />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="rounded-xl border border-dashed border-black/10 bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
+                  Currently highlighting the <span className="font-medium text-foreground">{TAB_LABELS[onboardingCurrent.tab]}</span> tab.
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white/60 px-6 py-4">
+                <Button variant="ghost" size="sm" onClick={handleOnboardingSkip} className="text-sm text-muted-foreground hover:text-foreground">
+                  Skip
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handleOnboardingPrev} disabled={safeOnboardingStepIndex === 0}>
+                    Back
+                  </Button>
+                  <Button size="sm" onClick={handleOnboardingNext}>
+                    {onboardingIsLast ? "Finish" : "Next"}
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 
