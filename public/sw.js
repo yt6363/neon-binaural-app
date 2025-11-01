@@ -1,13 +1,13 @@
 const CACHE_PREFIX = "nbs-pwa";
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const PAGE_CACHE = `${CACHE_PREFIX}-pages-${CACHE_VERSION}`;
 const ASSET_CACHE = `${CACHE_PREFIX}-assets-${CACHE_VERSION}`;
 const PRECACHE_URLS = [
   "/",
   "/offline.html",
   "/manifest.webmanifest",
-  "/icons/nbs-icon.svg",
-  "/icons/nbs-icon-maskable.svg",
+  "/icons/brain-icon.svg",
+  "/icons/brain-icon-maskable.svg",
 ];
 
 self.addEventListener("install", (event) => {
@@ -79,7 +79,7 @@ async function cacheFirstPage(request) {
       await cache.put(request, response.clone());
       return response;
     }
-  } catch (error) {
+  } catch {
     // fall through
   }
   const fallback = await cache.match("/offline.html");

@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Neon Binaural Studio",
-    short_name: "Neon Studio",
+    name: "Brain",
+    short_name: "Brain",
     description:
-      "Install Neon Binaural Studio to mix custom binaural beats, track sessions, and stay in flow on any device.",
+      "Install Brain for offline binaural beats, curated soundscapes, and streak-building focus rituals.",
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -14,12 +14,12 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     icons: [
       {
-        src: "/icons/nbs-icon.svg",
+        src: "/icons/brain-icon.svg",
         sizes: "any",
         type: "image/svg+xml",
       },
       {
-        src: "/icons/nbs-icon-maskable.svg",
+        src: "/icons/brain-icon-maskable.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "maskable",

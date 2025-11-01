@@ -10,24 +10,24 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "Neon Binaural Studio",
-  applicationName: "Neon Binaural Studio",
-  description: "Immersive binaural beats studio designed for focus, calm, and deep work.",
+  title: "Brain",
+  applicationName: "Brain",
+  description: "Brain blends binaural beats, focus rituals, and streak tracking into one installable studio.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/icons/nbs-icon.svg", sizes: "any", type: "image/svg+xml" },
+      { url: "/icons/brain-icon.svg", sizes: "any", type: "image/svg+xml" },
     ],
     apple: [
-      { url: "/icons/nbs-icon-maskable.svg" },
+      { url: "/icons/brain-icon-maskable.svg" },
     ],
     other: [
-      { rel: "mask-icon", url: "/icons/nbs-icon-maskable.svg" },
+      { rel: "mask-icon", url: "/icons/brain-icon-maskable.svg", color: "#ec4899" },
     ],
   },
   appleWebApp: {
     capable: true,
-    title: "Neon Binaural",
+    title: "Brain",
     statusBarStyle: "black-translucent",
   },
 };

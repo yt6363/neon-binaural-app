@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { History, Headphones, Star, Play, Pause, Home, SlidersHorizontal, Brain, BookOpenText, Activity, Trash2 } from "lucide-react";
+import { PwaInstallButton } from "@/components/pwa/pwa-install-button";
 
 /* ---- DOM typings to avoid any ---- */
 declare global {
@@ -669,12 +670,12 @@ export default function NeonBinauralStudio() {
       try {
         const bandInfo = BANDS[band];
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: "Neon Binaural Studio",
+          title: "Brain",
           artist: `${bandInfo.name} focus`,
           album: "Binaural Session",
           artwork: [
             {
-              src: "/icons/nbs-icon-maskable.svg",
+              src: "/icons/brain-icon-maskable.svg",
               sizes: "512x512",
               type: "image/svg+xml",
             },
@@ -1005,13 +1006,16 @@ export default function NeonBinauralStudio() {
             </button>
             {playing && <Badge variant="outline" className="text-red-700 border-red-300">LIVE</Badge>}
           </div>
-          <nav className="hidden md:flex items-center gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-3 justify-end ml-auto">
+            <nav className="hidden md:flex items-center gap-4 text-sm">
               <NavItem icon={<Home size={16} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
               <NavItem icon={<Brain size={16} />} label="Soundscapes" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
               <NavItem icon={<SlidersHorizontal size={16} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
               <NavItem icon={<BookOpenText size={16} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
               <NavItem icon={<Activity size={16} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
             </nav>
+            <PwaInstallButton />
+          </div>
         </header>
 
         <main className="rounded-3xl border border-black/10 bg-white shadow-[0_12px_24px_-12px_rgba(15,23,42,0.3)] p-6 md:p-10 space-y-8">
