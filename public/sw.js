@@ -1,10 +1,21 @@
 const CACHE_PREFIX = "nbs-pwa";
-const STATIC_CACHE = `${CACHE_PREFIX}-static-v1`;
-const PRECACHE_URLS = ["/", "/offline.html", "/manifest.webmanifest"];
+const CACHE_VERSION = "v2";
+const PAGE_CACHE = `${CACHE_PREFIX}-pages-${CACHE_VERSION}`;
+const ASSET_CACHE = `${CACHE_PREFIX}-assets-${CACHE_VERSION}`;
+const PRECACHE_URLS = [
+  "/",
+  "/offline.html",
+  "/manifest.webmanifest",
+  "/icons/nbs-icon.svg",
+  "/icons/nbs-icon-maskable.svg",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
+    (async () => {
+      const cache = await caches.open(PAGE_CACHE);
+      await cache.addAll(PRECACHE_URLS);
+    })()
   );
   self.skipWaiting();
 });
@@ -15,7 +26,12 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((key) => key.startsWith(CACHE_PREFIX) && key !== STATIC_CACHE)
+          .filter(
+            (key) =>
+              key.startsWith(CACHE_PREFIX) &&
+              key !== PAGE_CACHE &&
+              key !== ASSET_CACHE
+          )
           .map((key) => caches.delete(key))
       );
       await self.clients.claim();
@@ -30,40 +46,18 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (!response || response.status !== 200) return response;
-          const cloned = response.clone();
-          caches.open(STATIC_CACHE).then((cache) => cache.put(request, cloned));
-          return response;
-        })
-        .catch(() => caches.match("/offline.html"))
-    );
+    event.respondWith(cacheFirstPage(request));
     return;
   }
 
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
-        .then((response) => {
-          if (
-            !response ||
-            response.status !== 200 ||
-            response.type !== "basic"
-          ) {
-            return response;
-          }
-          const cloned = response.clone();
-          caches.open(STATIC_CACHE).then((cache) => cache.put(request, cloned));
-          return response;
-        })
-        .catch(() => cached);
-    })
-  );
+  if (url.pathname.startsWith("/_next/") || url.pathname.startsWith("/icons/")) {
+    event.respondWith(cacheFirstAsset(request));
+    return;
+  }
+
+  event.respondWith(networkFallingBackToCache(request));
 });
 
 self.addEventListener("message", (event) => {
@@ -71,3 +65,77 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
 });
+
+async function cacheFirstPage(request) {
+  const cache = await caches.open(PAGE_CACHE);
+  const cached = await cache.match(request);
+  if (cached) {
+    updatePageCache(request, cache);
+    return cached;
+  }
+  try {
+    const response = await fetch(request);
+    if (response && response.status === 200) {
+      await cache.put(request, response.clone());
+      return response;
+    }
+  } catch (error) {
+    // fall through
+  }
+  const fallback = await cache.match("/offline.html");
+  if (fallback) return fallback;
+  return offlineResponse();
+}
+
+async function cacheFirstAsset(request) {
+  const cache = await caches.open(ASSET_CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (
+    response &&
+    response.status === 200 &&
+    (response.type === "basic" || response.type === "cors")
+  ) {
+    cache.put(request, response.clone());
+  }
+  return response;
+}
+
+async function networkFallingBackToCache(request) {
+  try {
+    const response = await fetch(request);
+    if (
+      response &&
+      response.status === 200 &&
+      response.type === "basic"
+    ) {
+      const cache = await caches.open(ASSET_CACHE);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cache = await caches.open(ASSET_CACHE);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    return offlineResponse();
+  }
+}
+
+function updatePageCache(request, cache) {
+  fetch(request)
+    .then((response) => {
+      if (response && response.status === 200) {
+        cache.put(request, response.clone());
+      }
+    })
+    .catch(() => {});
+}
+
+function offlineResponse() {
+  return new Response("Offline", {
+    status: 503,
+    statusText: "Service Unavailable",
+    headers: { "Content-Type": "text/plain" },
+  });
+}
