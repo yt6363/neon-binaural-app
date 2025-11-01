@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Neon Binaural Studio maskable icon">
+  <defs>
+    <linearGradient id="maskable-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="maskable-wave" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#maskable-bg)"/>
+  <g fill="none" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 20)">
+    <path stroke="rgba(255,255,255,0.7)" d="M88 236h72l48-132 104 260 48-128h64"/>
+    <path stroke="url(#maskable-wave)" d="M116 340c70 0 70-212 140-212s70 212 140 212"/>
+  </g>
+</svg>

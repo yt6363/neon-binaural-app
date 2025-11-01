@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Neon Binaural Studio icon">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f0f9ff"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+  <g fill="none" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="rgba(255,255,255,0.65)" d="M96 256h64l48-112 96 224 48-112h64"/>
+    <path stroke="url(#wave)" d="M128 352c64 0 64-192 128-192s64 192 128 192"/>
+  </g>
+</svg>

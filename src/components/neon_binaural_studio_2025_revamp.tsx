@@ -513,6 +513,8 @@ export default function NeonBinauralStudio() {
   const splitterRef = useRef<ChannelSplitterNode | null>(null);
   const analyserLRef = useRef<AnalyserNode | null>(null);
   const analyserRRef = useRef<AnalyserNode | null>(null);
+  const mediaElementRef = useRef<HTMLAudioElement | null>(null);
+  const mediaStreamRef = useRef<MediaStreamAudioDestinationNode | null>(null);
   const scopeLRef = useRef<HTMLCanvasElement | null>(null);
   const scopeRRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -531,6 +533,23 @@ export default function NeonBinauralStudio() {
     } catch {
       setShowOnboarding(true);
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined" || typeof window === "undefined") return;
+    const ensureRunning = () => {
+      const ctx = ctxRef.current;
+      if (!ctx) return;
+      if (ctx.state !== "running") {
+        ctx.resume().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", ensureRunning);
+    window.addEventListener("pageshow", ensureRunning);
+    return () => {
+      document.removeEventListener("visibilitychange", ensureRunning);
+      window.removeEventListener("pageshow", ensureRunning);
+    };
   }, []);
 
   // Persist sessions when changed
@@ -571,6 +590,12 @@ export default function NeonBinauralStudio() {
     const CtxCtor = (window.AudioContext ?? window.webkitAudioContext) as typeof AudioContext;
     const ctx: AudioContext = new CtxCtor({ sampleRate: 48000 });
     ctxRef.current = ctx;
+    ctx.onstatechange = () => {
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
+      }
+    };
+    ctx.resume().catch(() => {});
     masterRef.current = new GainNode(ctx, { gain: 0.9 });
 
     // analysis path
@@ -580,7 +605,42 @@ export default function NeonBinauralStudio() {
     masterRef.current.connect(splitterRef.current);
     splitterRef.current.connect(analyserLRef.current, 0);
     splitterRef.current.connect(analyserRRef.current, 1);
+
+    let directDestinationConnected = true;
     masterRef.current.connect(ctx.destination);
+
+    if (typeof MediaStreamAudioDestinationNode !== "undefined" && mediaElementRef.current) {
+      try {
+        const mediaDest = new MediaStreamAudioDestinationNode(ctx);
+        mediaStreamRef.current = mediaDest;
+        masterRef.current.connect(mediaDest);
+        const media = mediaElementRef.current;
+        media.srcObject = mediaDest.stream;
+        media.loop = true;
+        media.autoplay = true;
+        media.setAttribute("playsinline", "true");
+        media.muted = false;
+        const played = media.play();
+        if (played && typeof played.then === "function") {
+          played
+            .then(() => {
+              if (directDestinationConnected) {
+                try { masterRef.current?.disconnect(ctx.destination); } catch {}
+                directDestinationConnected = false;
+              }
+            })
+            .catch(() => {
+              media.srcObject = null;
+              mediaStreamRef.current = null;
+            });
+        } else if (directDestinationConnected) {
+          try { masterRef.current?.disconnect(ctx.destination); } catch {}
+          directDestinationConnected = false;
+        }
+      } catch {
+        mediaStreamRef.current = null;
+      }
+    }
 
     // voices
     const makeVoice = (type: OscillatorType, frequency: number, pan: number, gain: number) => {
@@ -604,25 +664,81 @@ export default function NeonBinauralStudio() {
 
     setPlaying(true);
     if (minutes > 0) setDeadline(Date.now() + minutes * 60 * 1000);
+
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      try {
+        const bandInfo = BANDS[band];
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: "Neon Binaural Studio",
+          artist: `${bandInfo.name} focus`,
+          album: "Binaural Session",
+          artwork: [
+            {
+              src: "/icons/nbs-icon-maskable.svg",
+              sizes: "512x512",
+              type: "image/svg+xml",
+            },
+          ],
+        });
+        navigator.mediaSession.playbackState = "playing";
+        navigator.mediaSession.setActionHandler("pause", () => stop());
+        navigator.mediaSession.setActionHandler("stop", () => stop());
+        navigator.mediaSession.setActionHandler("play", async () => {
+          const current = ctxRef.current;
+          if (current && current.state !== "running") {
+            await current.resume().catch(() => {});
+          }
+          if (!ctxRef.current) {
+            start();
+          }
+        });
+      } catch {
+        // no-op if Media Session API not available
+      }
+    }
   }
 
   const stop = useCallback(() => {
-    if (ctxRef.current) {
-      const ctx = ctxRef.current;
+    const ctx = ctxRef.current;
+    if (ctx) {
       const t = ctx.currentTime + 0.06;
       if (gARef.current) ramp(gARef.current.gain, 0, ctx);
       if (gBRef.current) ramp(gBRef.current.gain, 0, ctx);
       if (oscARef.current) try { oscARef.current.stop(t); } catch {}
       if (oscBRef.current) try { oscBRef.current.stop(t); } catch {}
       setTimeout(() => {
+        try { mediaStreamRef.current?.disconnect(); } catch {}
+        mediaStreamRef.current = null;
+        if (mediaElementRef.current) {
+          const media = mediaElementRef.current;
+          media.pause();
+          media.removeAttribute("src");
+          media.srcObject = null;
+          media.load();
+        }
+        try { masterRef.current?.disconnect(); } catch {}
+        masterRef.current = null;
+        splitterRef.current = null;
+        analyserLRef.current = null;
+        analyserRRef.current = null;
         ctx.close();
         ctxRef.current = null;
-        analyserLRef.current = null; analyserRRef.current = null;
       }, 120);
     }
     setPlaying(false);
     setDeadline(null);
     setRing(0);
+
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      try {
+        navigator.mediaSession.playbackState = "paused";
+        navigator.mediaSession.setActionHandler("play", null);
+        navigator.mediaSession.setActionHandler("pause", null);
+        navigator.mediaSession.setActionHandler("stop", null);
+      } catch {
+        // ignore
+      }
+    }
 
     if (sessionStartRef.current) {
       const { start: startedAt, planned, band: bandAtStart } = sessionStartRef.current;
@@ -869,6 +985,12 @@ export default function NeonBinauralStudio() {
 
   return (
     <div className="min-h-screen bg-[#F7F7F7] text-foreground">
+      <audio
+        ref={mediaElementRef}
+        aria-hidden="true"
+        preload="auto"
+        className="absolute -z-50 h-0 w-0 opacity-0"
+      />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-12 pt-10 md:pt-12 pb-28 space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white/95 border border-black/10 px-6 py-5 shadow-[0_8px_0_rgba(15,23,42,0.08)]">
           <div className="flex flex-wrap items-center gap-3">
