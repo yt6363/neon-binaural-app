@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { History, Headphones, Star, Play, Pause, Home, SlidersHorizontal, Brain, BookOpenText, Activity, Trash2 } from "lucide-react";
+import { History, Headphones, Star, Play, Pause, Home, SlidersHorizontal, Brain, BookOpenText, Activity, Trash2, Sparkles } from "lucide-react";
 import { PwaInstallButton } from "@/components/pwa/pwa-install-button";
 
 /* ---- DOM typings to avoid any ---- */
@@ -59,8 +59,191 @@ const BANDS = {
   pure:  { name: "Pure",  range: [0, 0],  hint: "no beat",      color: "#1F2937", icon: "◯" },
 } as const;
 
+// Pure Tone / Sacred Frequencies
+type PureTone = {
+  name: string;
+  frequency: number;
+  category: string;
+  hint: string;
+  color: string;
+  icon: string;
+  description: string[];
+};
+
+const PURE_TONES: Record<string, PureTone> = {
+  om432: {
+    name: "OM 432 Hz",
+    frequency: 432,
+    category: "Meditation",
+    hint: "Universe's heartbeat",
+    color: "#7C3AED",
+    icon: "🕉️",
+    description: [
+      "Called the 'natural tuning' of the universe",
+      "Resonates with nature, water molecules, human body",
+      "Promotes relaxation and emotional release",
+      "Used in meditation, yoga, deep relaxation"
+    ]
+  },
+  om136: {
+    name: "Cosmic OM",
+    frequency: 136.1,
+    category: "Meditation",
+    hint: "Earth's year frequency",
+    color: "#7C3AED",
+    icon: "🪐",
+    description: [
+      "Calculated from Earth's orbit around the sun",
+      "Used in Tibetan and Indian meditation practices",
+      "Aligns with the 'frequency of the universe'",
+      "Deep meditation and spiritual awakening"
+    ]
+  },
+  miracle528: {
+    name: "Miracle 528 Hz",
+    frequency: 528,
+    category: "Healing",
+    hint: "DNA repair & love",
+    color: "#6BCF7F",
+    icon: "💚",
+    description: [
+      "Most famous healing frequency",
+      "DNA repair and transformation",
+      "Love frequency, heart chakra activation",
+      "Used for healing and miracles"
+    ]
+  },
+  pain174: {
+    name: "Foundation 174 Hz",
+    frequency: 174,
+    category: "Healing",
+    hint: "Pain relief",
+    color: "#6BCF7F",
+    icon: "🩹",
+    description: [
+      "Anesthetic effect on the body",
+      "Reduces physical and energetic pain",
+      "Security, safety, and grounding",
+      "Foundation for healing work"
+    ]
+  },
+  tissue285: {
+    name: "Regeneration 285 Hz",
+    frequency: 285,
+    category: "Healing",
+    hint: "Cellular healing",
+    color: "#6BCF7F",
+    icon: "🔬",
+    description: [
+      "Tissue regeneration and repair",
+      "Influences energy fields",
+      "Helps heal minor injuries",
+      "Cellular level restoration"
+    ]
+  },
+  fear396: {
+    name: "Liberation 396 Hz",
+    frequency: 396,
+    category: "Emotional",
+    hint: "Release fear & guilt",
+    color: "#FF6B9D",
+    icon: "🦋",
+    description: [
+      "Releases guilt and fear",
+      "Root chakra activation",
+      "Grounding and stability",
+      "Liberation from negative emotions"
+    ]
+  },
+  change417: {
+    name: "Change 417 Hz",
+    frequency: 417,
+    category: "Emotional",
+    hint: "Undo & transform",
+    color: "#FF6B9D",
+    icon: "🔄",
+    description: [
+      "Facilitating positive change",
+      "Breaking negative patterns",
+      "Sacral chakra and creativity",
+      "Undoing difficult situations"
+    ]
+  },
+  connection639: {
+    name: "Connection 639 Hz",
+    frequency: 639,
+    category: "Emotional",
+    hint: "Relationships & harmony",
+    color: "#FF6B9D",
+    icon: "💞",
+    description: [
+      "Harmonious relationships",
+      "Heart chakra communication",
+      "Empathy and understanding",
+      "Connection with others"
+    ]
+  },
+  intuition741: {
+    name: "Awakening 741 Hz",
+    frequency: 741,
+    category: "Mental",
+    hint: "Expression & solutions",
+    color: "#00D1FF",
+    icon: "💡",
+    description: [
+      "Awakening intuition",
+      "Throat chakra activation",
+      "Finding solutions and clarity",
+      "Detoxification on all levels"
+    ]
+  },
+  spiritual852: {
+    name: "Spiritual 852 Hz",
+    frequency: 852,
+    category: "Mental",
+    hint: "Third eye activation",
+    color: "#00D1FF",
+    icon: "👁️",
+    description: [
+      "Third eye and intuition",
+      "Inner strength and awareness",
+      "Spiritual enlightenment",
+      "Return to spiritual order"
+    ]
+  },
+  divine963: {
+    name: "Divine 963 Hz",
+    frequency: 963,
+    category: "Mental",
+    hint: "Crown chakra & unity",
+    color: "#00D1FF",
+    icon: "👑",
+    description: [
+      "Crown chakra activation",
+      "Pineal gland stimulation",
+      "Connection to higher consciousness",
+      "Frequency of the Gods"
+    ]
+  },
+  holy111: {
+    name: "Holy 111 Hz",
+    frequency: 111,
+    category: "Sleep",
+    hint: "Sacred sites frequency",
+    color: "#FFD93D",
+    icon: "🏛️",
+    description: [
+      "Found in ancient sacred sites worldwide",
+      "Beta-endorphin production",
+      "Deep meditation and trance states",
+      "Profound relaxation"
+    ]
+  },
+};
+
 type BandKey = keyof typeof BANDS;
-type TabKey = 'home' | 'soundscapes' | 'studio' | 'focus' | 'history';
+type ToneKey = keyof typeof PURE_TONES;
+type TabKey = 'home' | 'soundscapes' | 'studio' | 'focus' | 'tones' | 'history';
 type VocabPair = [word: string, def: string];
 
 const ONBOARDING_STORAGE_KEY = "nbs.onboarding.v1";
@@ -69,6 +252,7 @@ const TAB_LABELS: Record<TabKey, string> = {
   soundscapes: "Soundscapes",
   studio: "Studio",
   focus: "Focus",
+  tones: "Tones",
   history: "History",
 };
 const ONBOARDING_STEPS: Array<{
@@ -404,6 +588,10 @@ export default function NeonBinauralStudio() {
   const [deadline, setDeadline] = useState<number | null>(null);
   const [ring, setRing] = useState(0);
   const [favorites, setFavorites] = useState<BandKey[]>(["alpha", "theta"]);
+
+  // Pure tone state
+  const [activeTone, setActiveTone] = useState<ToneKey | null>(null);
+  const [toneFavorites, setToneFavorites] = useState<ToneKey[]>(["om432", "miracle528"]);
 
   // Sessions / streak
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -881,6 +1069,18 @@ export default function NeonBinauralStudio() {
   // soundscapes helper: pick and auto play
   function pickBandAndPlay(k: BandKey) {
     setBand(k);
+    setActiveTone(null); // deactivate any tone
+    if (!playing) start();
+  }
+
+  // tones helper: pick pure tone and auto play
+  function pickToneAndPlay(k: ToneKey) {
+    const tone = PURE_TONES[k];
+    setActiveTone(k);
+    setBaseHz(tone.frequency);
+    setFreqA(tone.frequency);
+    setFreqB(tone.frequency);
+    setBand("pure"); // use pure mode for no binaural beat
     if (!playing) start();
   }
 
@@ -977,6 +1177,15 @@ export default function NeonBinauralStudio() {
             onPatternReveal={handlePatternReveal}
           />
         );
+      case "tones":
+        return (
+          <TonesView
+            activeTone={activeTone}
+            toneFavorites={toneFavorites}
+            setToneFavorites={setToneFavorites}
+            onPick={pickToneAndPlay}
+          />
+        );
       case "history":
         return <HistoryView sessions={sessions} onClear={() => { setSessions([]); }} />;
       default:
@@ -1026,6 +1235,7 @@ export default function NeonBinauralStudio() {
           <nav className="flex items-center gap-2 py-3">
             <NavItem icon={<Home size={20} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
             <NavItem icon={<Brain size={20} />} label="Soundscapes" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
+            <NavItem icon={<Sparkles size={20} />} label="Tones" active={tab === "tones"} onClick={() => setTab("tones")} />
             <NavItem icon={<SlidersHorizontal size={20} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
             <NavItem icon={<BookOpenText size={20} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
             <NavItem icon={<Activity size={20} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
@@ -1042,9 +1252,10 @@ export default function NeonBinauralStudio() {
 
       {/* MOBILE BOTTOM NAV - Bold & Cartoonish */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#FFD93D] border-t-[6px] border-black z-[100]">
-        <nav className="grid grid-cols-5 gap-1 p-2">
+        <nav className="grid grid-cols-6 gap-1 p-2">
           <NavItem icon={<Home size={20} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
-          <NavItem icon={<Brain size={20} />} label="Sound" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
+          <NavItem icon={<Brain size={20} />} label="Beats" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
+          <NavItem icon={<Sparkles size={20} />} label="Tones" active={tab === "tones"} onClick={() => setTab("tones")} />
           <NavItem icon={<SlidersHorizontal size={20} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
           <NavItem icon={<BookOpenText size={20} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
           <NavItem icon={<Activity size={20} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
@@ -1302,6 +1513,121 @@ function MoodCard({ k, active, onPick, onFav, highlight }:{ k:BandKey; active:bo
       <div className={`font-black text-2xl mb-2 ${active ? 'text-white' : 'text-black'}`}>{v.name}</div>
       <div className={`text-sm font-bold ${active ? 'text-white/90' : 'text-black/70'}`}>{v.range[0]}–{v.range[1]} Hz</div>
       <div className={`text-xs font-extrabold uppercase tracking-wider mt-1 ${active ? 'text-white/80' : 'text-black/60'}`}>{v.hint}</div>
+    </button>
+  );
+}
+
+function TonesView({ activeTone, toneFavorites, setToneFavorites, onPick }:{
+  activeTone: ToneKey | null;
+  toneFavorites: ToneKey[];
+  setToneFavorites: (favs: ToneKey[]) => void;
+  onPick: (k: ToneKey) => void;
+}){
+  function toggleFav(k: ToneKey) {
+    setToneFavorites(toneFavorites.includes(k) ? toneFavorites.filter((x: ToneKey) => x !== k) : [...toneFavorites, k]);
+  }
+
+  // Group by category
+  const byCategory: Record<string, ToneKey[]> = {};
+  const allToneKeys = Object.keys(PURE_TONES) as ToneKey[];
+  allToneKeys.forEach(k => {
+    const cat = PURE_TONES[k].category;
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(k);
+  });
+
+  return (
+    <div className="grid gap-12">
+      {/* Favorites */}
+      {toneFavorites.length > 0 && (
+        <div className="grid gap-6">
+          <div className="inline-block w-fit px-6 py-3 bg-[#FFD93D] border-[4px] border-black rounded-full shadow-[5px_5px_0_rgba(0,0,0,1)]">
+            <span className="text-lg font-black uppercase">⭐ Favorite Tones</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {toneFavorites.map(k => (
+              <ToneCard
+                key={k}
+                k={k}
+                active={activeTone === k}
+                onPick={() => onPick(k)}
+                onFav={() => toggleFav(k)}
+                highlight
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Categories */}
+      {Object.entries(byCategory).map(([category, tones]) => {
+        const nonFavTones = tones.filter(k => !toneFavorites.includes(k));
+        if (nonFavTones.length === 0) return null;
+
+        return (
+          <div key={category} className="grid gap-6">
+            <div className="inline-block w-fit px-6 py-3 bg-white border-[4px] border-black rounded-full shadow-[5px_5px_0_rgba(0,0,0,1)]">
+              <span className="text-lg font-black uppercase">{category}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {nonFavTones.map(k => (
+                <ToneCard
+                  key={k}
+                  k={k}
+                  active={activeTone === k}
+                  onPick={() => onPick(k)}
+                  onFav={() => toggleFav(k)}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ToneCard({ k, active, onPick, onFav, highlight }:{
+  k: ToneKey;
+  active: boolean;
+  onPick: () => void;
+  onFav: () => void;
+  highlight?: boolean;
+}){
+  const tone = PURE_TONES[k];
+  const inFavorites = highlight ?? false;
+  const starProps = inFavorites
+    ? { fill: "#FFD93D", stroke: "black", strokeWidth: "2", className: "h-6 w-6" }
+    : { fill: "white", stroke: "black", strokeWidth: "2", className: "h-6 w-6" };
+
+  return (
+    <button
+      onClick={onPick}
+      className={`relative rounded-3xl border-[5px] border-black px-6 py-6 text-left bg-white transition-all duration-200 shadow-[6px_6px_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none ${active ? 'ring-[5px] ring-[#00D1FF] ring-offset-4' : ''} group`}
+      style={{ backgroundColor: active ? tone.color : 'white' }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-4xl" aria-hidden>{tone.icon}</div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onFav(); }}
+          className="hover:scale-125 transition-transform"
+        >
+          <Star {...starProps} />
+        </button>
+      </div>
+      <div className={`font-black text-xl mb-1 ${active ? 'text-white' : 'text-black'}`}>{tone.name}</div>
+      <div className={`text-sm font-bold mb-2 ${active ? 'text-white/90' : 'text-black/70'}`}>{tone.frequency} Hz</div>
+      <div className={`text-xs font-extrabold uppercase tracking-wider mb-3 ${active ? 'text-white/80' : 'text-black/60'}`}>{tone.hint}</div>
+
+      {/* Description bullets in small text */}
+      <div className={`space-y-1 text-[10px] leading-relaxed ${active ? 'text-white/70' : 'text-black/50'}`}>
+        {tone.description.map((desc, idx) => (
+          <div key={idx} className="flex items-start gap-1.5">
+            <span className="mt-1 inline-block h-1 w-1 rounded-full flex-shrink-0" style={{ backgroundColor: active ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)' }} />
+            <span>{desc}</span>
+          </div>
+        ))}
+      </div>
     </button>
   );
 }
