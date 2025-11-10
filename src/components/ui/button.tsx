@@ -5,26 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-bold transition-all duration-200 ease-out hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg active:scale-100 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-black uppercase tracking-wide border-[4px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transition-all duration-200 ease-out hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5 shrink-0 [&_svg]:shrink-0 outline-none",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-[#00D1FF] text-white",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-[#FF6B9D] text-white",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "bg-white text-black",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-[#FFD93D] text-black",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-transparent border-transparent shadow-none hover:bg-white/10",
+        link: "text-[#00D1FF] border-transparent shadow-none underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-6 py-2.5 has-[>svg]:px-4",
-        sm: "h-9 rounded-full gap-1.5 px-4 has-[>svg]:px-3",
-        lg: "h-12 rounded-full px-8 has-[>svg]:px-6 text-base",
-        icon: "size-10",
+        default: "h-12 px-8 py-3 has-[>svg]:px-6",
+        sm: "h-10 rounded-full gap-1.5 px-6 has-[>svg]:px-4",
+        lg: "h-14 rounded-full px-10 has-[>svg]:px-8 text-lg",
+        icon: "size-12",
       },
     },
     defaultVariants: {

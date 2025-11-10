@@ -985,51 +985,70 @@ export default function NeonBinauralStudio() {
   })();
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7] text-foreground">
+    <div className="min-h-screen bg-[#00D1FF] text-foreground flex flex-col">
       <audio
         ref={mediaElementRef}
         aria-hidden="true"
         preload="auto"
         className="absolute -z-50 h-0 w-0 opacity-0"
       />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-12 pt-10 md:pt-12 pb-28 space-y-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 rounded-full bg-white/90 backdrop-blur-md border-2 border-black/10 px-8 py-4 shadow-lg transition-all duration-200">
-          <div className="flex flex-wrap items-center gap-3">
+
+      {/* BOLD HEADER - Full Width */}
+      <header className="sticky top-0 z-50 bg-white border-b-[6px] border-black shadow-[0_6px_0_rgba(0,0,0,1)]">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <button
-              className={`inline-flex items-center gap-2 rounded-full border-2 border-black/10 px-6 py-2.5 text-base font-extrabold shadow-lg transition-all duration-200 hover:scale-105 hover:-translate-y-1 hover:shadow-xl
-                ${playing ? "text-red-700 bg-rose-100 ring-2 ring-red-200" : "text-primary bg-primary/10 backdrop-blur"}
+              className={`inline-flex items-center gap-2 rounded-full border-[4px] px-8 py-3 text-lg font-extrabold shadow-[4px_4px_0_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none
+                ${playing ? "text-white bg-[#FF6B9D] border-black" : "text-white bg-[#00D1FF] border-black"}
               `}
               aria-label="Brain"
             >
-              <IconWaveTriangle className="h-4 w-4" />
-              <span>Brain</span>
+              <IconWaveTriangle className="h-6 w-6" />
+              <span>BRAIN</span>
             </button>
-            {playing && <Badge variant="outline" className="text-red-700 border-red-300">LIVE</Badge>}
+            {playing && (
+              <div className="animate-bounce">
+                <Badge className="bg-[#FF6B9D] text-white border-[3px] border-black font-extrabold text-sm px-4 py-1.5 shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                  ⚡ LIVE
+                </Badge>
+              </div>
+            )}
+            <div className="hidden md:flex items-center gap-3">
+              <PwaInstallButton />
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 justify-end ml-auto">
-            <nav className="hidden md:flex items-center gap-4 text-sm">
-              <NavItem icon={<Home size={16} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
-              <NavItem icon={<Brain size={16} />} label="Soundscapes" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
-              <NavItem icon={<SlidersHorizontal size={16} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
-              <NavItem icon={<BookOpenText size={16} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
-              <NavItem icon={<Activity size={16} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
-            </nav>
-            <PwaInstallButton />
-          </div>
-        </header>
+        </div>
+      </header>
 
-        <main className="rounded-[2rem] border-2 border-black/10 bg-white/95 backdrop-blur-md shadow-xl p-6 md:p-10 space-y-8 transition-all duration-200">
-          {activeView}
-        </main>
+      {/* DESKTOP NAV - Bold Tabs */}
+      <div className="hidden md:block bg-[#FFD93D] border-b-[6px] border-black">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <nav className="flex items-center gap-2 py-3">
+            <NavItem icon={<Home size={20} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
+            <NavItem icon={<Brain size={20} />} label="Soundscapes" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
+            <NavItem icon={<SlidersHorizontal size={20} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
+            <NavItem icon={<BookOpenText size={20} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
+            <NavItem icon={<Activity size={20} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
+          </nav>
+        </div>
       </div>
 
-      {/* Bottom nav (mobile) */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-3xl bg-white/90 backdrop-blur-md border-2 border-black/10 rounded-full shadow-xl p-3 grid grid-cols-5 gap-2 md:hidden">
-        <NavItem icon={<Home size={18} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
-        <NavItem icon={<Brain size={18} />} label="Sound" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
-        <NavItem icon={<SlidersHorizontal size={18} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
-        <NavItem icon={<BookOpenText size={18} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
-        <NavItem icon={<Activity size={18} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
+      {/* MAIN CONTENT - Full Width */}
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 md:py-8 mb-24 md:mb-8">
+        <div className="max-w-[1800px] mx-auto">
+          {activeView}
+        </div>
+      </main>
+
+      {/* MOBILE BOTTOM NAV - Bold & Cartoonish */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#FFD93D] border-t-[6px] border-black z-50">
+        <nav className="grid grid-cols-5 gap-1 p-2">
+          <NavItem icon={<Home size={20} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
+          <NavItem icon={<Brain size={20} />} label="Sound" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
+          <NavItem icon={<SlidersHorizontal size={20} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
+          <NavItem icon={<BookOpenText size={20} />} label="Focus" active={tab === "focus"} onClick={() => setTab("focus")} />
+          <NavItem icon={<Activity size={20} />} label="History" active={tab === "history"} onClick={() => setTab("history")} />
+        </nav>
       </div>
 
       {!showOnboarding && (
@@ -1155,27 +1174,31 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
   return (
     <div className="grid gap-12">
       {/* Now Playing */}
-      <Card className="border-4 border-black/15">
+      <Card style={{backgroundColor: '#FFD93D'}}>
         <CardHeader className="pb-0">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm text-muted-foreground">Now Playing</CardTitle>
-            <div className="hidden md:block text-xs font-semibold text-muted-foreground">
-              Streak: {streak} day{streak===1?"":"s"}
+            <CardTitle className="text-base">🎵 Now Playing</CardTitle>
+            <div className="hidden md:block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
+              <span className="text-sm font-black">🔥 {streak} day{streak===1?"":"s"}</span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="pt-4 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
           {/* Visualizer */}
           <div className="grid gap-5">
-            <div className="space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground">Left Channel</div>
-              <div className="rounded-2xl border-4 border-black/10 bg-card h-48 overflow-hidden">
+            <div className="space-y-3">
+              <div className="inline-block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                <span className="text-xs font-black uppercase">👈 Left Channel</span>
+              </div>
+              <div className="rounded-3xl border-[5px] border-black bg-black h-48 overflow-hidden shadow-[6px_6px_0_rgba(0,0,0,1)]">
                 <canvas ref={scopeLRef} className="h-full w-full" />
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground">Right Channel</div>
-              <div className="rounded-2xl border-4 border-black/10 bg-card h-48 overflow-hidden">
+            <div className="space-y-3">
+              <div className="inline-block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                <span className="text-xs font-black uppercase">👉 Right Channel</span>
+              </div>
+              <div className="rounded-3xl border-[5px] border-black bg-black h-48 overflow-hidden shadow-[6px_6px_0_rgba(0,0,0,1)]">
                 <canvas ref={scopeRRef} className="h-full w-full" />
               </div>
             </div>
@@ -1195,12 +1218,12 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
 
       {/* Daily Dose */}
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground font-bold">Daily Dose</CardTitle></CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-5 py-2.5 rounded-full border-2 transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 font-bold ${todayCount>=1? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-white/70 text-muted-foreground border-black/10'}`}>Session 1</span>
-          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-5 py-2.5 rounded-full border-2 transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 font-bold ${todayCount>=2? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-white/70 text-muted-foreground/70 border-black/10'}`}>Session 2</span>
-          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-5 py-2.5 rounded-full border-2 transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 font-bold ${todayCount>=3? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-white/70 text-muted-foreground/70 border-black/10'}`}>Session 3</span>
-          <p className="w-full text-xs text-foreground/70 pt-1 italic">Sessions register after 14 minutes of continuous playtime.</p>
+        <CardHeader className="pb-2"><CardTitle className="text-base">⚡ Daily Dose</CardTitle></CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-4 text-sm">
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 rounded-full border-[4px] border-black transition-all duration-200 shadow-[4px_4px_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_rgba(0,0,0,1)] font-black uppercase text-sm ${todayCount>=1? 'bg-[#6BCF7F] text-white' : 'bg-white text-black/50'}`}>✓ Session 1</span>
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 rounded-full border-[4px] border-black transition-all duration-200 shadow-[4px_4px_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_rgba(0,0,0,1)] font-black uppercase text-sm ${todayCount>=2? 'bg-[#6BCF7F] text-white' : 'bg-white text-black/50'}`}>✓ Session 2</span>
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 rounded-full border-[4px] border-black transition-all duration-200 shadow-[4px_4px_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_rgba(0,0,0,1)] font-black uppercase text-sm ${todayCount>=3? 'bg-[#6BCF7F] text-white' : 'bg-white text-black/50'}`}>✓ Session 3</span>
+          <p className="w-full text-xs font-bold text-black/60 pt-1">⏱️ Sessions count after 14 minutes of play!</p>
         </CardContent>
       </Card>
     </div>
@@ -1212,11 +1235,13 @@ function SoundscapesView({ band, favorites, setFavorites, onPick }:{
 }){
   function toggleFav(k:BandKey){ setFavorites(favorites.includes(k)? favorites.filter((x: BandKey)=>x!==k): [...favorites,k]); }
   return (
-    <div className="grid gap-10">
+    <div className="grid gap-12">
       {/* Favorites */}
-      <div className="grid gap-3">
-        <div className="text-sm text-muted-foreground">My Favorites</div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid gap-6">
+        <div className="inline-block w-fit px-6 py-3 bg-[#FFD93D] border-[4px] border-black rounded-full shadow-[5px_5px_0_rgba(0,0,0,1)]">
+          <span className="text-lg font-black uppercase">⭐ My Favorites</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {favorites.map(k=> (
             <MoodCard
               key={k}
@@ -1231,9 +1256,11 @@ function SoundscapesView({ band, favorites, setFavorites, onPick }:{
       </div>
 
       {/* All */}
-      <div className="grid gap-3">
-        <div className="text-sm text-muted-foreground">All Moodscapes</div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid gap-6">
+        <div className="inline-block w-fit px-6 py-3 bg-white border-[4px] border-black rounded-full shadow-[5px_5px_0_rgba(0,0,0,1)]">
+          <span className="text-lg font-black uppercase">🎨 All Moodscapes</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {(Object.keys(BANDS) as BandKey[])
             .filter((k) => !favorites.includes(k))
             .map(k=> (
@@ -1255,19 +1282,26 @@ function MoodCard({ k, active, onPick, onFav, highlight }:{ k:BandKey; active:bo
   const v = BANDS[k];
   const inFavorites = highlight ?? false;
   const starProps = inFavorites
-    ? { fill: "#FFD93D", stroke: "#F59E0B", className: "h-5 w-5 drop-shadow-md" }
-    : { fill: "none", stroke: "#9CA3AF", strokeDasharray: "4 3", className: "h-5 w-5" };
+    ? { fill: "#FFD93D", stroke: "black", strokeWidth: "2", className: "h-6 w-6" }
+    : { fill: "white", stroke: "black", strokeWidth: "2", className: "h-6 w-6" };
   return (
-    <button onClick={onPick} className={`relative rounded-[2rem] border-2 px-5 py-6 text-left bg-white/90 backdrop-blur-md transition-all duration-200 hover:scale-105 hover:-translate-y-2 hover:shadow-2xl ${active? 'ring-4 ring-primary/50 border-primary shadow-xl' : 'border-black/10 hover:border-primary/30'} group`}>
-      <div className="flex items-center justify-between">
-        <div className="text-3xl" aria-hidden>{v.icon}</div>
-        <div onClick={(e)=>{e.stopPropagation(); onFav();}} className="opacity-80 hover:opacity-100 hover:scale-110 transition-all">
+    <button
+      onClick={onPick}
+      className={`relative rounded-3xl border-[5px] border-black px-6 py-8 text-left bg-white transition-all duration-200 shadow-[6px_6px_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none ${active? 'ring-[5px] ring-[#00D1FF] ring-offset-4' : ''} group`}
+      style={{backgroundColor: active ? v.color : 'white'}}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-5xl" aria-hidden>{v.icon}</div>
+        <button
+          onClick={(e)=>{e.stopPropagation(); onFav();}}
+          className="hover:scale-125 transition-transform"
+        >
           <Star {...starProps} />
-        </div>
+        </button>
       </div>
-      <div className="mt-4 font-extrabold text-lg text-card-foreground">{v.name}</div>
-      <div className="text-xs font-semibold text-muted-foreground mt-1">{v.range[0]}–{v.range[1]} Hz · {v.hint}</div>
-      <div className="absolute inset-x-4 bottom-4 h-1.5 rounded-full shadow-md" style={{background:v.color, opacity:.35}}/>
+      <div className={`font-black text-2xl mb-2 ${active ? 'text-white' : 'text-black'}`}>{v.name}</div>
+      <div className={`text-sm font-bold ${active ? 'text-white/90' : 'text-black/70'}`}>{v.range[0]}–{v.range[1]} Hz</div>
+      <div className={`text-xs font-extrabold uppercase tracking-wider mt-1 ${active ? 'text-white/80' : 'text-black/60'}`}>{v.hint}</div>
     </button>
   );
 }
@@ -1441,10 +1475,10 @@ function NavItem({icon,label,active,onClick}:{icon:React.ReactNode;label:string;
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center py-2.5 px-4 rounded-full border-2 transition-all duration-200 hover:scale-105 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/50 font-bold ${active? 'text-primary-foreground bg-primary border-primary shadow-lg' : 'text-muted-foreground bg-white/80 backdrop-blur border-black/10 hover:text-foreground'}`}
+      className={`flex md:flex-row flex-col items-center justify-center gap-2 py-2 md:py-2.5 px-3 md:px-6 rounded-full border-[3px] border-black font-extrabold transition-all duration-200 focus-visible:outline-none shadow-[3px_3px_0_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none ${active? 'text-white bg-[#00D1FF]' : 'text-black bg-white'}`}
     >
-      <div className={`p-2 rounded-full transition-all duration-200 ${active? 'bg-white/20' : 'bg-primary/10'}`}>{icon}</div>
-      <div className="text-[10px] mt-1.5 uppercase tracking-wider">{label}</div>
+      <div>{icon}</div>
+      <div className="text-[9px] md:text-xs uppercase tracking-wider">{label}</div>
     </button>
   );
 }
