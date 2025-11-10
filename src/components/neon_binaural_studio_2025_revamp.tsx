@@ -77,7 +77,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Meditation",
     hint: "Universe's heartbeat",
     color: "#7C3AED",
-    icon: "🕉️",
+    icon: "",
     description: [
       "Called the 'natural tuning' of the universe",
       "Resonates with nature, water molecules, human body",
@@ -91,7 +91,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Meditation",
     hint: "Earth's year frequency",
     color: "#7C3AED",
-    icon: "🪐",
+    icon: "",
     description: [
       "Calculated from Earth's orbit around the sun",
       "Used in Tibetan and Indian meditation practices",
@@ -105,7 +105,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Healing",
     hint: "DNA repair & love",
     color: "#6BCF7F",
-    icon: "💚",
+    icon: "",
     description: [
       "Most famous healing frequency",
       "DNA repair and transformation",
@@ -119,7 +119,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Healing",
     hint: "Pain relief",
     color: "#6BCF7F",
-    icon: "🩹",
+    icon: "",
     description: [
       "Anesthetic effect on the body",
       "Reduces physical and energetic pain",
@@ -133,7 +133,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Healing",
     hint: "Cellular healing",
     color: "#6BCF7F",
-    icon: "🔬",
+    icon: "",
     description: [
       "Tissue regeneration and repair",
       "Influences energy fields",
@@ -147,7 +147,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Emotional",
     hint: "Release fear & guilt",
     color: "#FF6B9D",
-    icon: "🦋",
+    icon: "",
     description: [
       "Releases guilt and fear",
       "Root chakra activation",
@@ -161,7 +161,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Emotional",
     hint: "Undo & transform",
     color: "#FF6B9D",
-    icon: "🔄",
+    icon: "",
     description: [
       "Facilitating positive change",
       "Breaking negative patterns",
@@ -175,7 +175,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Emotional",
     hint: "Relationships & harmony",
     color: "#FF6B9D",
-    icon: "💞",
+    icon: "",
     description: [
       "Harmonious relationships",
       "Heart chakra communication",
@@ -189,7 +189,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Mental",
     hint: "Expression & solutions",
     color: "#00D1FF",
-    icon: "💡",
+    icon: "",
     description: [
       "Awakening intuition",
       "Throat chakra activation",
@@ -203,7 +203,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Mental",
     hint: "Third eye activation",
     color: "#00D1FF",
-    icon: "👁️",
+    icon: "",
     description: [
       "Third eye and intuition",
       "Inner strength and awareness",
@@ -217,7 +217,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Mental",
     hint: "Crown chakra & unity",
     color: "#00D1FF",
-    icon: "👑",
+    icon: "",
     description: [
       "Crown chakra activation",
       "Pineal gland stimulation",
@@ -231,7 +231,7 @@ const PURE_TONES: Record<string, PureTone> = {
     category: "Sleep",
     hint: "Sacred sites frequency",
     color: "#FFD93D",
-    icon: "🏛️",
+    icon: "",
     description: [
       "Found in ancient sacred sites worldwide",
       "Beta-endorphin production",
@@ -1606,18 +1606,19 @@ function ToneCard({ k, active, onPick, onFav, highlight }:{
       className={`relative rounded-3xl border-[5px] border-black px-6 py-6 text-left bg-white transition-all duration-200 shadow-[6px_6px_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none ${active ? 'ring-[5px] ring-[#00D1FF] ring-offset-4' : ''} group`}
       style={{ backgroundColor: active ? tone.color : 'white' }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-4xl" aria-hidden>{tone.icon}</div>
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className={`font-black text-xl mb-1 ${active ? 'text-white' : 'text-black'}`}>{tone.name}</div>
+          <div className={`text-sm font-bold mb-2 ${active ? 'text-white/90' : 'text-black/70'}`}>{tone.frequency} Hz</div>
+          <div className={`text-xs font-extrabold uppercase tracking-wider ${active ? 'text-white/80' : 'text-black/60'}`}>{tone.hint}</div>
+        </div>
         <button
           onClick={(e) => { e.stopPropagation(); onFav(); }}
-          className="hover:scale-125 transition-transform"
+          className="hover:scale-125 transition-transform ml-2"
         >
           <Star {...starProps} />
         </button>
       </div>
-      <div className={`font-black text-xl mb-1 ${active ? 'text-white' : 'text-black'}`}>{tone.name}</div>
-      <div className={`text-sm font-bold mb-2 ${active ? 'text-white/90' : 'text-black/70'}`}>{tone.frequency} Hz</div>
-      <div className={`text-xs font-extrabold uppercase tracking-wider mb-3 ${active ? 'text-white/80' : 'text-black/60'}`}>{tone.hint}</div>
 
       {/* Description bullets in small text */}
       <div className={`space-y-1 text-[10px] leading-relaxed ${active ? 'text-white/70' : 'text-black/50'}`}>
