@@ -1184,8 +1184,8 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
           </div>
         </CardHeader>
         <CardContent className="pt-4 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
-          {/* Visualizer */}
-          <div className="grid gap-5">
+          {/* Visualizer - Hidden on Mobile */}
+          <div className="hidden lg:grid gap-5">
             <div className="space-y-3">
               <div className="inline-block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
                 <span className="text-xs font-black uppercase">👈 Left Channel</span>
@@ -1205,7 +1205,7 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
           </div>
 
           {/* Controls */}
-          <div className="flex flex-col items-center gap-6 pt-4 lg:pt-8">
+          <div className="flex flex-col items-center gap-6 pt-0 lg:pt-8">
             <HeroControl playing={playing} ring={ring} deadline={deadline} onStart={onStart} onStop={onStop} accent={accent} />
             <div className="w-full grid gap-4">
               <QuickField label="Base Hz" value={baseHz} min={60} max={1200} step={1} onChange={setBaseHz} />
