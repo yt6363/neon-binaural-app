@@ -366,29 +366,29 @@ function HeroControl({ playing, ring, deadline, onStart, onStop, accent }: { pla
     return () => window.clearInterval(id);
   }, [deadline]);
 
-  const glowStyle = playing
-    ? {
-        boxShadow: `0 0 0 6px ${accent}1A, 0 0 24px ${accent}4D`,
-        transition: "box-shadow 0.3s ease, transform 0.3s ease",
-      }
-    : { transition: "box-shadow 0.3s ease, transform 0.3s ease" };
-
   return (
-    <div className="grid place-items-center gap-2">
+    <div className="grid place-items-center gap-4">
+      {/* BIG BOLD PLAY/PAUSE BUTTON */}
       <button
         onClick={playing ? onStop : onStart}
-        className="relative w-28 h-28 rounded-full grid place-items-center select-none bg-card shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-        style={glowStyle}
+        className={`relative w-40 h-40 rounded-full border-[6px] border-black shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all duration-200 hover:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] active:shadow-none active:translate-x-[8px] active:translate-y-[8px] ${playing ? 'bg-[#FF6B9D]' : 'bg-[#6BCF7F]'}`}
         aria-label={playing ? "Pause" : "Play"}
       >
-        <ProgressRing value={ring} size={116} color={playing ? accent : "#111827"} bg="rgba(0,0,0,.08)" />
         <div className="absolute inset-0 grid place-items-center">
-          <div className="flex flex-col items-center gap-1">
-            <div className="text-2xl" style={{ color: playing ? accent : "#111827" }}>{playing ? <Pause /> : <Play />}</div>
-            {mmss && <div className="text-[11px] font-mono text-muted-foreground">{mmss}</div>}
-          </div>
+          {playing ? (
+            <Pause className="w-16 h-16 text-white" strokeWidth={4} />
+          ) : (
+            <Play className="w-16 h-16 text-white ml-2" strokeWidth={4} fill="white" />
+          )}
         </div>
       </button>
+
+      {/* BOLD TIME DISPLAY */}
+      {mmss && (
+        <div className="px-8 py-4 bg-white border-[4px] border-black rounded-full shadow-[6px_6px_0_rgba(0,0,0,1)]">
+          <span className="text-3xl font-black tabular-nums">{mmss}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -1485,13 +1485,18 @@ function NavItem({icon,label,active,onClick}:{icon:React.ReactNode;label:string;
 
 function QuickField({label,value,min,max,step,onChange}:{label:string;value:number;min:number;max:number;step:number;onChange:(n:number)=>void;}){
   return (
-    <div className="space-y-2">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="w-full sm:flex-1">
+    <div className="space-y-3">
+      <div className="inline-block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
+        <Label className="text-xs font-black uppercase tracking-wider">{label}</Label>
+      </div>
+      <div className="flex gap-3 items-center">
+        <div className="flex-1">
           <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v])=>onChange(Number(v))} />
         </div>
-        <Input className="w-full sm:w-24" type="number" value={value} min={min} max={max} step={step} onChange={e=>onChange(Number(e.target.value||0))} />
+        <input
+          className="w-24 px-4 py-3 text-center text-lg font-black border-[4px] border-black rounded-xl shadow-[4px_4px_0_rgba(0,0,0,1)] focus:outline-none focus:shadow-[2px_2px_0_rgba(0,0,0,1)] focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
+          type="number" value={value} min={min} max={max} step={step} onChange={e=>onChange(Number(e.target.value||0))}
+        />
       </div>
     </div>
   );
@@ -1499,27 +1504,47 @@ function QuickField({label,value,min,max,step,onChange}:{label:string;value:numb
 
 function Field({ label, value, setValue, min, max, step, isFloat }: { label: string; value: number; setValue: (n: number) => void; min: number; max: number; step: number; isFloat?: boolean; }) {
   return (
-    <div className="space-y-2">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="w-full sm:flex-1">
+    <div className="space-y-3">
+      <div className="inline-block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
+        <Label className="text-xs font-black uppercase tracking-wider">{label}</Label>
+      </div>
+      <div className="flex gap-3 items-center">
+        <div className="flex-1">
           <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => setValue(isFloat ? Number(v) : Math.round(v))} />
         </div>
-        <Input className="w-full sm:w-24" type="number" value={value} min={min} max={max} step={step}
-          onChange={e => setValue(isFloat ? Number(e.target.value || 0) : Number.parseInt(e.target.value || "0"))} />
+        <input
+          className="w-24 px-4 py-3 text-center text-lg font-black border-[4px] border-black rounded-xl shadow-[4px_4px_0_rgba(0,0,0,1)] focus:outline-none focus:shadow-[2px_2px_0_rgba(0,0,0,1)] focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
+          type="number" value={value} min={min} max={max} step={step}
+          onChange={e => setValue(isFloat ? Number(e.target.value || 0) : Number.parseInt(e.target.value || "0"))}
+        />
       </div>
     </div>
   );
 }
 
 function SelectWave({ value, setValue }: { value: OscillatorType; setValue: (w: OscillatorType) => void; }) {
+  const waves: Array<{type: OscillatorType; emoji: string}> = [
+    { type: "sine", emoji: "〰️" },
+    { type: "triangle", emoji: "📐" },
+    { type: "square", emoji: "⬛" },
+    { type: "sawtooth", emoji: "🪚" },
+  ];
+
   return (
-    <div className="space-y-2">
-      <Label className="text-xs text-muted-foreground">Wave</Label>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {["sine", "triangle", "square", "sawtooth"].map((w) => (
-          <button key={w} onClick={() => setValue(w as OscillatorType)}
-            className={`text-xs rounded-md px-2 py-1 border transition ${value === w ? "border-foreground/80 bg-muted" : "border bg-card"}`}>{w}</button>
+    <div className="space-y-3">
+      <div className="inline-block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
+        <Label className="text-xs font-black uppercase tracking-wider">Wave Type</Label>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {waves.map((w) => (
+          <button
+            key={w.type}
+            onClick={() => setValue(w.type)}
+            className={`flex flex-col items-center gap-2 px-4 py-4 rounded-2xl border-[4px] border-black font-black uppercase text-xs tracking-wider transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] ${value === w.type ? 'bg-[#00D1FF] text-white' : 'bg-white text-black'}`}
+          >
+            <span className="text-2xl">{w.emoji}</span>
+            <span>{w.type}</span>
+          </button>
         ))}
       </div>
     </div>

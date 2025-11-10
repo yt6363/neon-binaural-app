@@ -163,16 +163,6 @@
     cursor: pointer;
   }
 
-  /* Bold cartoonish effects */
-  button:not(.no-bounce):hover, a:not(.no-bounce):hover {
-    animation: bounce 0.5s ease;
-  }
-
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-  }
-
   /* Remove all transparency and gradients */
   * {
     backdrop-filter: none !important;
