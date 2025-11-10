@@ -105,21 +105,18 @@ export function PwaInstallButton({ className }: PwaInstallButtonProps) {
         type="button"
         onClick={handleInstall}
         className={cn(
-          "group inline-flex items-center gap-2 rounded-full border border-black/10 bg-emerald-100/80 px-4 py-2 text-sm font-semibold text-emerald-900 shadow-[0_4px_0_rgba(15,23,42,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_0_rgba(15,23,42,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70",
+          "group inline-flex items-center gap-2 rounded-full border-[4px] border-black bg-[#6BCF7F] px-6 py-2.5 text-sm font-black uppercase tracking-wide text-white shadow-[4px_4px_0_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none focus-visible:outline-none",
           className
         )}
         aria-label="Install Brain app"
       >
-        <span className="relative grid h-2.5 w-2.5 place-items-center">
-          <span className="absolute h-2.5 w-2.5 rounded-full bg-emerald-400 opacity-70 blur-[1px]" />
-          <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-        </span>
-        <span className="tracking-tight">Install Brain</span>
-        <Download className="h-3.5 w-3.5 text-emerald-700 transition-transform duration-200 group-hover:-translate-y-0.5" aria-hidden />
+        <Download className="h-5 w-5" aria-hidden />
+        <span>Install</span>
       </button>
       {shouldShowHint && (
-        <div className="absolute right-0 z-30 mt-2 w-56 rounded-2xl border border-black/10 bg-white/95 p-3 text-xs font-medium text-slate-700 shadow-[0_8px_20px_-12px_rgba(15,23,42,0.35)]">
-          Open Safari&rsquo;s share sheet and tap <strong>Add to Home Screen</strong> to install Brain.
+        <div className="absolute right-0 z-30 mt-3 w-64 rounded-2xl border-[4px] border-black bg-white p-4 text-sm font-bold text-black shadow-[6px_6px_0_rgba(0,0,0,1)]">
+          <p className="mb-2 font-black uppercase text-[#00D1FF]">📱 iOS Instructions</p>
+          Open Safari&rsquo;s share sheet and tap <strong className="text-[#6BCF7F]">Add to Home Screen</strong> to install Brain.
         </div>
       )}
     </div>
