@@ -985,7 +985,7 @@ export default function NeonBinauralStudio() {
   })();
 
   return (
-    <div className="min-h-screen bg-[#00D1FF] text-foreground flex flex-col">
+    <div className="min-h-screen text-foreground flex flex-col">
       <audio
         ref={mediaElementRef}
         aria-hidden="true"
@@ -994,7 +994,7 @@ export default function NeonBinauralStudio() {
       />
 
       {/* BOLD HEADER - Full Width */}
-      <header className="sticky top-0 z-50 bg-white border-b-[6px] border-black shadow-[0_6px_0_rgba(0,0,0,1)]">
+      <header className="sticky top-0 z-[100] bg-white border-b-[6px] border-black shadow-[0_6px_0_rgba(0,0,0,1)]">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <button
@@ -1021,7 +1021,7 @@ export default function NeonBinauralStudio() {
       </header>
 
       {/* DESKTOP NAV - Bold Tabs */}
-      <div className="hidden md:block bg-[#FFD93D] border-b-[6px] border-black">
+      <div className="hidden md:block sticky top-[88px] z-[90] bg-[#FFD93D] border-b-[6px] border-black">
         <div className="px-4 sm:px-6 lg:px-8">
           <nav className="flex items-center gap-2 py-3">
             <NavItem icon={<Home size={20} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
@@ -1041,7 +1041,7 @@ export default function NeonBinauralStudio() {
       </main>
 
       {/* MOBILE BOTTOM NAV - Bold & Cartoonish */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#FFD93D] border-t-[6px] border-black z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#FFD93D] border-t-[6px] border-black z-[100]">
         <nav className="grid grid-cols-5 gap-1 p-2">
           <NavItem icon={<Home size={20} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
           <NavItem icon={<Brain size={20} />} label="Sound" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
