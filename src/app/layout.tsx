@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "Brain",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
 };
 
@@ -37,6 +37,7 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
     { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
   ],
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
