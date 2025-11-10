@@ -51,12 +51,12 @@ function IconWaveTriangle(props: React.SVGProps<SVGSVGElement>) {
 // ------------------------------------------------------------
 
 const BANDS = {
-  delta: { name: "Delta", range: [0.5, 4], hint: "deep sleep", color: "#00BFA6", icon: "🌙" },
-  theta: { name: "Theta", range: [4, 8], hint: "meditation", color: "#1DA1F2", icon: "🧘" },
-  alpha: { name: "Alpha", range: [8, 12], hint: "calm focus", color: "#FF6B6B", icon: "🫧" },
-  beta:  { name: "Beta",  range: [12, 30], hint: "active focus", color: "#FFD700", icon: "⚡" },
-  gamma: { name: "Gamma", range: [30, 80], hint: "high attention", color: "#7C3AED", icon: "✨" },
-  pure:  { name: "Pure",  range: [0, 0],  hint: "no beat",      color: "#111827", icon: "◯" },
+  delta: { name: "Delta", range: [0.5, 4], hint: "deep sleep", color: "#00D1FF", icon: "🌙" },
+  theta: { name: "Theta", range: [4, 8], hint: "meditation", color: "#7C3AED", icon: "🧘" },
+  alpha: { name: "Alpha", range: [8, 12], hint: "calm focus", color: "#FF6B9D", icon: "🫧" },
+  beta:  { name: "Beta",  range: [12, 30], hint: "active focus", color: "#FFD93D", icon: "⚡" },
+  gamma: { name: "Gamma", range: [30, 80], hint: "high attention", color: "#6BCF7F", icon: "✨" },
+  pure:  { name: "Pure",  range: [0, 0],  hint: "no beat",      color: "#1F2937", icon: "◯" },
 } as const;
 
 type BandKey = keyof typeof BANDS;
@@ -993,11 +993,11 @@ export default function NeonBinauralStudio() {
         className="absolute -z-50 h-0 w-0 opacity-0"
       />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-12 pt-10 md:pt-12 pb-28 space-y-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white/95 border border-black/10 px-6 py-5 shadow-[0_8px_0_rgba(15,23,42,0.08)]">
+        <header className="flex flex-wrap items-center justify-between gap-4 rounded-full bg-white/90 backdrop-blur-md border-2 border-black/10 px-8 py-4 shadow-lg transition-all duration-200">
           <div className="flex flex-wrap items-center gap-3">
             <button
-              className={`inline-flex items-center gap-2 rounded-full border border-black/10 px-5 py-2 text-base font-semibold shadow-[0_4px_0_rgba(15,23,42,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_0_rgba(15,23,42,0.15)]
-                ${playing ? "text-red-700 bg-rose-100 ring-2 ring-red-200" : "text-slate-900 bg-amber-100/80 backdrop-blur"}
+              className={`inline-flex items-center gap-2 rounded-full border-2 border-black/10 px-6 py-2.5 text-base font-extrabold shadow-lg transition-all duration-200 hover:scale-105 hover:-translate-y-1 hover:shadow-xl
+                ${playing ? "text-red-700 bg-rose-100 ring-2 ring-red-200" : "text-primary bg-primary/10 backdrop-blur"}
               `}
               aria-label="Brain"
             >
@@ -1018,13 +1018,13 @@ export default function NeonBinauralStudio() {
           </div>
         </header>
 
-        <main className="rounded-3xl border border-black/10 bg-white shadow-[0_12px_24px_-12px_rgba(15,23,42,0.3)] p-6 md:p-10 space-y-8">
+        <main className="rounded-[2rem] border-2 border-black/10 bg-white/95 backdrop-blur-md shadow-xl p-6 md:p-10 space-y-8 transition-all duration-200">
           {activeView}
         </main>
       </div>
 
       {/* Bottom nav (mobile) */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-3xl bg-white/95 border border-black/10 rounded-2xl shadow-[0_10px_20px_-10px_rgba(15,23,42,0.25)] p-2 grid grid-cols-5 gap-2 md:hidden">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-3xl bg-white/90 backdrop-blur-md border-2 border-black/10 rounded-full shadow-xl p-3 grid grid-cols-5 gap-2 md:hidden">
         <NavItem icon={<Home size={18} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
         <NavItem icon={<Brain size={18} />} label="Sound" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
         <NavItem icon={<SlidersHorizontal size={18} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
@@ -1195,11 +1195,11 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
 
       {/* Daily Dose */}
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Daily Dose</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground font-bold">Daily Dose</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-4 py-1.5 rounded-full border-2 border-black/10 transition-transform duration-200 hover:-translate-y-0.5 ${todayCount>=1? 'bg-yellow-300 text-yellow-900 font-semibold shadow-[0_6px_0_rgba(253,224,71,0.65)]' : 'bg-white/70 text-muted-foreground'}`}>Session 1</span>
-          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-4 py-1.5 rounded-full border-2 border-black/10 transition-transform duration-200 hover:-translate-y-0.5 ${todayCount>=2? 'bg-yellow-300 text-yellow-900 font-semibold shadow-[0_6px_0_rgba(253,224,71,0.65)]' : 'bg-white/70 text-muted-foreground/70'}`}>Session 2</span>
-          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-4 py-1.5 rounded-full border-2 border-black/10 transition-transform duration-200 hover:-translate-y-0.5 ${todayCount>=3? 'bg-yellow-300 text-yellow-900 font-semibold shadow-[0_6px_0_rgba(253,224,71,0.65)]' : 'bg-white/70 text-muted-foreground/70'}`}>Session 3</span>
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-5 py-2.5 rounded-full border-2 transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 font-bold ${todayCount>=1? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-white/70 text-muted-foreground border-black/10'}`}>Session 1</span>
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-5 py-2.5 rounded-full border-2 transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 font-bold ${todayCount>=2? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-white/70 text-muted-foreground/70 border-black/10'}`}>Session 2</span>
+          <span className={`inline-flex w-full sm:w-auto items-center justify-center px-5 py-2.5 rounded-full border-2 transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 font-bold ${todayCount>=3? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-white/70 text-muted-foreground/70 border-black/10'}`}>Session 3</span>
           <p className="w-full text-xs text-foreground/70 pt-1 italic">Sessions register after 14 minutes of continuous playtime.</p>
         </CardContent>
       </Card>
@@ -1255,19 +1255,19 @@ function MoodCard({ k, active, onPick, onFav, highlight }:{ k:BandKey; active:bo
   const v = BANDS[k];
   const inFavorites = highlight ?? false;
   const starProps = inFavorites
-    ? { fill: "#FACC15", stroke: "#F59E0B", className: "h-4 w-4 drop-shadow-sm" }
-    : { fill: "none", stroke: "#9CA3AF", strokeDasharray: "4 3", className: "h-4 w-4" };
+    ? { fill: "#FFD93D", stroke: "#F59E0B", className: "h-5 w-5 drop-shadow-md" }
+    : { fill: "none", stroke: "#9CA3AF", strokeDasharray: "4 3", className: "h-5 w-5" };
   return (
-    <button onClick={onPick} className={`relative rounded-3xl border-2 border-black/10 px-4 py-5 text-left bg-white/90 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_16px_0_rgba(15,23,42,0.1)] ${active? 'ring-2 ring-accent/40' : ''} group`}>
+    <button onClick={onPick} className={`relative rounded-[2rem] border-2 px-5 py-6 text-left bg-white/90 backdrop-blur-md transition-all duration-200 hover:scale-105 hover:-translate-y-2 hover:shadow-2xl ${active? 'ring-4 ring-primary/50 border-primary shadow-xl' : 'border-black/10 hover:border-primary/30'} group`}>
       <div className="flex items-center justify-between">
-        <div className="text-2xl" aria-hidden>{v.icon}</div>
-        <div onClick={(e)=>{e.stopPropagation(); onFav();}} className="opacity-80 hover:opacity-100 transition">
+        <div className="text-3xl" aria-hidden>{v.icon}</div>
+        <div onClick={(e)=>{e.stopPropagation(); onFav();}} className="opacity-80 hover:opacity-100 hover:scale-110 transition-all">
           <Star {...starProps} />
         </div>
       </div>
-      <div className="mt-3 font-medium text-card-foreground">{v.name}</div>
-      <div className="text-xs text-muted-foreground">{v.range[0]}–{v.range[1]} Hz · {v.hint}</div>
-      <div className="absolute inset-x-3 bottom-3 h-1 rounded-full" style={{background:v.color, opacity:.2}}/>
+      <div className="mt-4 font-extrabold text-lg text-card-foreground">{v.name}</div>
+      <div className="text-xs font-semibold text-muted-foreground mt-1">{v.range[0]}–{v.range[1]} Hz · {v.hint}</div>
+      <div className="absolute inset-x-4 bottom-4 h-1.5 rounded-full shadow-md" style={{background:v.color, opacity:.35}}/>
     </button>
   );
 }
@@ -1441,10 +1441,10 @@ function NavItem({icon,label,active,onClick}:{icon:React.ReactNode;label:string;
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl border-2 border-black/5 bg-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-foreground/30 ${active? 'text-foreground shadow-md' : 'text-muted-foreground'}`}
+      className={`flex flex-col items-center justify-center py-2.5 px-4 rounded-full border-2 transition-all duration-200 hover:scale-105 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/50 font-bold ${active? 'text-primary-foreground bg-primary border-primary shadow-lg' : 'text-muted-foreground bg-white/80 backdrop-blur border-black/10 hover:text-foreground'}`}
     >
-      <div className={`p-2 rounded-full transition-all duration-200 ${active? 'bg-accent/60 shadow-sm' : 'bg-white/60 hover:bg-accent/30'}`}>{icon}</div>
-      <div className="text-[11px] mt-1">{label}</div>
+      <div className={`p-2 rounded-full transition-all duration-200 ${active? 'bg-white/20' : 'bg-primary/10'}`}>{icon}</div>
+      <div className="text-[10px] mt-1.5 uppercase tracking-wider">{label}</div>
     </button>
   );
 }

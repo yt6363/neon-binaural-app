@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Fredoka } from "next/font/google";
+import { Baloo_2 } from "next/font/google";
 import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import "./globals.css";
 
-const fredoka = Fredoka({
-  variable: "--font-fredoka",
+const baloo2 = Baloo_2({
+  variable: "--font-baloo-2",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
       { url: "/icons/brain-icon-maskable.svg" },
     ],
     other: [
-      { rel: "mask-icon", url: "/icons/brain-icon-maskable.svg", color: "#ec4899" },
+      { rel: "mask-icon", url: "/icons/brain-icon-maskable.svg", color: "#00D1FF" },
     ],
   },
   appleWebApp: {
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
-    { media: "(prefers-color-scheme: dark)", color: "#020617" },
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
   ],
 };
 
@@ -46,7 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${fredoka.variable} font-sans antialiased`}>
+      <body className={`${baloo2.variable} font-sans antialiased`}>
         <ServiceWorkerRegistrar />
         {children}
       </body>
