@@ -992,7 +992,7 @@ export default function NeonBinauralStudio() {
         preload="auto"
         className="absolute -z-50 h-0 w-0 opacity-0"
       />
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-12 pb-28 space-y-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-10 md:pt-12 pb-28 space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white/95 border border-black/10 px-6 py-5 shadow-[0_8px_0_rgba(15,23,42,0.08)]">
           <div className="flex flex-wrap items-center gap-3">
             <button
