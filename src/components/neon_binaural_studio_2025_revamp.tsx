@@ -1245,7 +1245,7 @@ export default function NeonBinauralStudio() {
 
       {/* MAIN CONTENT - Full Width */}
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 md:py-8 mb-24 md:mb-8">
-        <div className="max-w-[1800px] mx-auto">
+        <div className="max-w-6xl mx-auto">
           {activeView}
         </div>
       </main>
@@ -1401,7 +1401,7 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
               <div className="inline-block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
                 <span className="text-xs font-black uppercase">👈 Left Channel</span>
               </div>
-              <div className="rounded-3xl border-[5px] border-black bg-black h-48 overflow-hidden shadow-[6px_6px_0_rgba(0,0,0,1)]">
+              <div className="rounded-3xl border-[5px] border-black bg-black aspect-[3/1] overflow-hidden shadow-[6px_6px_0_rgba(0,0,0,1)]">
                 <canvas ref={scopeLRef} className="h-full w-full" />
               </div>
             </div>
@@ -1409,7 +1409,7 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
               <div className="inline-block px-4 py-2 bg-white border-[3px] border-black rounded-full shadow-[3px_3px_0_rgba(0,0,0,1)]">
                 <span className="text-xs font-black uppercase">👉 Right Channel</span>
               </div>
-              <div className="rounded-3xl border-[5px] border-black bg-black h-48 overflow-hidden shadow-[6px_6px_0_rgba(0,0,0,1)]">
+              <div className="rounded-3xl border-[5px] border-black bg-black aspect-[3/1] overflow-hidden shadow-[6px_6px_0_rgba(0,0,0,1)]">
                 <canvas ref={scopeRRef} className="h-full w-full" />
               </div>
             </div>
