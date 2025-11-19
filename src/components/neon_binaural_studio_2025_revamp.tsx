@@ -992,7 +992,7 @@ export default function NeonBinauralStudio() {
         preload="auto"
         className="absolute -z-50 h-0 w-0 opacity-0"
       />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-12 pt-10 md:pt-12 pb-28 space-y-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-12 pb-28 space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white/95 border border-black/10 px-6 py-5 shadow-[0_8px_0_rgba(15,23,42,0.08)]">
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -1024,7 +1024,7 @@ export default function NeonBinauralStudio() {
       </div>
 
       {/* Bottom nav (mobile) */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-3xl bg-white/95 border border-black/10 rounded-2xl shadow-[0_10px_20px_-10px_rgba(15,23,42,0.25)] p-2 grid grid-cols-5 gap-2 md:hidden">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-2xl bg-white/95 border border-black/10 rounded-2xl shadow-[0_10px_20px_-10px_rgba(15,23,42,0.25)] p-2 grid grid-cols-5 gap-2 md:hidden">
         <NavItem icon={<Home size={18} />} label="Home" active={tab === "home"} onClick={() => setTab("home")} />
         <NavItem icon={<Brain size={18} />} label="Sound" active={tab === "soundscapes"} onClick={() => setTab("soundscapes")} />
         <NavItem icon={<SlidersHorizontal size={18} />} label="Studio" active={tab === "studio"} onClick={() => setTab("studio")} />
@@ -1169,13 +1169,13 @@ function HomeView({ baseHz, offset, minutes, setBaseHz, setOffset, setMinutes, s
           <div className="grid gap-5">
             <div className="space-y-2">
               <div className="text-xs font-semibold text-muted-foreground">Left Channel</div>
-              <div className="rounded-2xl border-4 border-black/10 bg-card h-48 overflow-hidden">
+              <div className="rounded-2xl border-4 border-black/10 bg-card aspect-[3/1] overflow-hidden">
                 <canvas ref={scopeLRef} className="h-full w-full" />
               </div>
             </div>
             <div className="space-y-2">
               <div className="text-xs font-semibold text-muted-foreground">Right Channel</div>
-              <div className="rounded-2xl border-4 border-black/10 bg-card h-48 overflow-hidden">
+              <div className="rounded-2xl border-4 border-black/10 bg-card aspect-[3/1] overflow-hidden">
                 <canvas ref={scopeRRef} className="h-full w-full" />
               </div>
             </div>
